@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">samantha</string>
+    <string name="stop_monitoring">STOP MONITORING</string>
+    <string name="validate">Validate</string>
+    <string name="server_url">Server url</string>
+    <string name="cancel">Annuler</string>
+
+</resources>
