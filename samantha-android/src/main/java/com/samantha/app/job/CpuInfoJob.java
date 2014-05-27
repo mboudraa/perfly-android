@@ -11,7 +11,6 @@ import de.greenrobot.event.EventBus;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.InputStreamReader;
 import java.util.Date;
 
 public class CpuInfoJob extends Job {
@@ -46,11 +45,12 @@ public class CpuInfoJob extends Job {
         long stimeAfter = getCpuUsageByPid(mPid)[1];
 
 
-        float userUsage = 100*(utimeAfter-utimeBefore)/(totalCpuUsageAfter -totalCpuUsageBefore);
-        float kernelUsage = 100*(stimeAfter-stimeBefore)/(totalCpuUsageAfter -totalCpuUsageBefore);
-        float total = userUsage + kernelUsage;
+        int userUsage = (int) (100 * (utimeAfter - utimeBefore) / (totalCpuUsageAfter - totalCpuUsageBefore));
+        int kernelUsage = (int) (100 * (stimeAfter - stimeBefore) / (totalCpuUsageAfter - totalCpuUsageBefore));
+        int total = userUsage + kernelUsage;
 
-        EventBus.getDefault().post(new CpuInfoEvent(mApplicationInfo, new CpuInfo(total, userUsage, kernelUsage), time));
+        EventBus.getDefault()
+                .post(new CpuInfoEvent(mApplicationInfo, new CpuInfo(total, userUsage, kernelUsage), time));
     }
 
     @Override
@@ -70,18 +70,18 @@ public class CpuInfoJob extends Job {
         long utime = Long.parseLong(values[13]);
         long stime = Long.parseLong(values[14]);
 
-        return new long[]{utime,stime};
+        return new long[]{utime, stime};
     }
 
     private long getTotalCpuUsage() throws Throwable {
 
-        String line =new BufferedReader(new FileReader("/proc/stat")).readLine().trim();
+        String line = new BufferedReader(new FileReader("/proc/stat")).readLine().trim();
 
         String[] values = line.split(" ");
 
         long result = 0;
         for (int i = 1; i < values.length; i++) {
-            if(!TextUtils.isEmpty(values[i])) {
+            if (!TextUtils.isEmpty(values[i])) {
                 result += Long.parseLong(values[i]);
             }
         }

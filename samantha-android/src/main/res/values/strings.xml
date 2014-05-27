@@ -4,5 +4,6 @@
     <string name="validate">Validate</string>
     <string name="server_url">Server url</string>
     <string name="cancel">Annuler</string>
+    <string name="scan_qr_code">Scan QR CODE</string>
 
 </resources>

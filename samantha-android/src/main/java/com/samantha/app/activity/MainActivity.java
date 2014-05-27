@@ -3,6 +3,7 @@ package com.samantha.app.activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -68,7 +69,13 @@ public class MainActivity extends BaseActivity {
 
     public void startMonitoringService(ApplicationInfo applicationInfo) {
         Intent serviceIntent = new Intent(MainActivity.this, MonitoringService.class);
-        serviceIntent.putExtra(MonitoringService.EXTRA_APPLICATION_INFO, applicationInfo);
+
+        SharedPreferences prefs =  getSharedPreferences(ConfigurationActivity.PREF_NAME, MODE_PRIVATE);
+
+        String hostname = prefs.getString(ConfigurationActivity.PREF_SERVER_KEY, "localhost");
+
+        serviceIntent.putExtra(MonitoringService.EXTRA_HOSTNAME, hostname);
+        serviceIntent.putExtra(MonitoringService.EXTRA_PORT, 80);
 
         startService(serviceIntent);
 

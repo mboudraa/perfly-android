@@ -32,6 +32,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/ic_action_camera"
         android:layout_gravity="center_vertical"
+        android:contentDescription="@string/scan_qr_code"
         />
 
 </LinearLayout>

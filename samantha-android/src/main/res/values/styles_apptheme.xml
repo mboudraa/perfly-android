@@ -20,7 +20,7 @@
   </style>
 
     <style name="TextAppearance.FloatLabel" parent="android:TextAppearance.Small">
-        <item name="android:textColor">@color/apptheme_color</item>
+        <item name="android:textColor">@color/float_label</item>
         <item name="android:textSize">12sp</item>
         <item name="android:textStyle">bold</item>
     </style>

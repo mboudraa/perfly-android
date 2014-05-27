@@ -8,12 +8,12 @@
         android:id="@+id/menu_configuration_cancel"
         android:icon="@drawable/ic_action_cancel"
         android:title="@string/cancel"
-        app:showAsAction="always"/>
+        app:showAsAction="ifRoom"/>
 
     <item
         android:id="@+id/menu_configuration_accept"
         android:icon="@drawable/ic_action_accept"
         android:title="@string/validate"
-        app:showAsAction="always"/>
+        app:showAsAction="ifRoom"/>
 
 </menu>

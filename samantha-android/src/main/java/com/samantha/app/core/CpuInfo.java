@@ -1,12 +1,17 @@
 package com.samantha.app.core;
 
+import com.google.gson.annotations.Expose;
+
 public class CpuInfo {
 
-    public final float cpuTotal;
-    public final float cpuUser;
-    public final float cpuKernel;
+    @Expose
+    public final int cpuTotal;
+    @Expose
+    public final int cpuUser;
+    @Expose
+    public final int cpuKernel;
 
-    public CpuInfo(float cpuTotal, float cpuUser, float cpuKernel) {
+    public CpuInfo(int cpuTotal, int cpuUser, int cpuKernel) {
         this.cpuTotal = cpuTotal;
         this.cpuUser = cpuUser;
         this.cpuKernel = cpuKernel;
@@ -15,7 +20,7 @@ public class CpuInfo {
 
     @Override
     public String toString() {
-        return String.format("CPU Total: %f %%, User: %f %%, Kernel: %f %%",
+        return String.format("CPU Total: %d%%, User: %d%%, Kernel: %d%%",
                              cpuTotal, cpuUser, cpuKernel);
 
     }

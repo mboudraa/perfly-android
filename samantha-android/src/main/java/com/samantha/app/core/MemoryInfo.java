@@ -1,10 +1,16 @@
 package com.samantha.app.core;
 
+import com.google.gson.annotations.Expose;
+
 public class MemoryInfo {
 
+    @Expose
     public final int dalvikLimit;
+    @Expose
     public final int appTotal;
+    @Expose
     public final int appDalvik;
+    @Expose
     public final int appNative;
 
     public MemoryInfo(int dalvikLimit, int appTotal, int appDalvik) {
