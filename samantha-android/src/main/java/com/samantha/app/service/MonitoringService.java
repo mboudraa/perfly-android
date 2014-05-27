@@ -16,11 +16,14 @@ import com.samantha.app.activity.MonitoringActivity;
 import com.samantha.app.core.CpuInfoMessage;
 import com.samantha.app.core.MemoryInfoMessage;
 import com.samantha.app.event.*;
+import com.samantha.app.exception.ServiceNotRunningException;
 import com.samantha.app.job.CpuInfoJob;
 import com.samantha.app.job.MemoryInfoJob;
+import com.samantha.app.job.ServerConnectionJob;
 import com.samantha.app.net.Connection;
 import com.samantha.app.net.Message;
 import de.greenrobot.event.EventBus;
+import hugo.weaving.DebugLog;
 import timber.log.Timber;
 
 import java.io.IOException;
@@ -38,7 +41,7 @@ public class MonitoringService extends Service {
     private static final int PID_NONE = -1;
     private static final int DEFAULT_TIMEOUT = 10;
     private static final int NOTIFICATION_ID = 0x01;
-    private static final int DEFAULT_PORT = 80;
+    private static final int DEFAULT_PORT = 8888;
 
     Connection mConnection = new Connection();
 
@@ -48,7 +51,7 @@ public class MonitoringService extends Service {
     JobManager mJobManager = SamApplication.getInstance().getJobManager();
     NotificationManager mNotificationManager;
     NotificationCompat.Builder mNotificationBuilder;
-    OrientationChangedEventListener mOrientationChangedEventReceiver;
+    boolean mIsRunning;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -63,7 +66,7 @@ public class MonitoringService extends Service {
         mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mNotificationBuilder = new NotificationCompat.Builder(this);
-        mOrientationChangedEventReceiver = new OrientationChangedEventListener(this);
+        mIsRunning = true;
     }
 
     @Override
@@ -74,38 +77,42 @@ public class MonitoringService extends Service {
         int port = intent.getIntExtra(EXTRA_PORT, DEFAULT_PORT);
         String hostname = intent.getStringExtra(EXTRA_HOSTNAME);
 
-        try {
-            mConnection.connect(hostname, DEFAULT_PORT);
-        } catch (IOException e) {
-            Toast.makeText(this, "Impossible to connect to server", Toast.LENGTH_LONG).show();
-            Timber.e(e, "");
-            stopSelf();
-        }
-
-
+        startConnection(hostname, port);
         startForeground(NOTIFICATION_ID, buildNotification(appInfo));
         waitForPid(appInfo, timeOut, TimeUnit.SECONDS);
 
         return START_NOT_STICKY;
     }
 
-
     @Override
     public void onDestroy() {
         Timber.i("STOPPING MONITORING SERVICE");
-
+        mIsRunning = false;
         EventBus.getDefault().unregister(this);
+        mJobManager.clear();
         stopMonitoring();
         stopForeground(true);
-
-        try {
-            mConnection.close();
-        } catch (IOException e) {
-            Timber.e("", e);
-        }
+        closeConnection();
 
     }
 
+    @DebugLog
+    public void startConnection(String hostname, int port) {
+        mJobManager.addJobInBackground(new ServerConnectionJob(hostname, port));
+    }
+
+    @DebugLog
+    public void closeConnection() {
+        try {
+            if (mConnection != null && mConnection.isConnected()) {
+                mConnection.close();
+            }
+        } catch (IOException e) {
+            Timber.e("", e);
+        }
+    }
+
+    @DebugLog
     public void waitForPid(final ApplicationInfo appInfo, final int timeOut, final TimeUnit timeUnit) {
         Timber.i("WAITING FOR PID OF '%s'", getPackageManager().getApplicationLabel(appInfo));
 
@@ -118,25 +125,31 @@ public class MonitoringService extends Service {
                     Awaitility.await().until(new Callable<Boolean>() {
                         @Override
                         public Boolean call() throws Exception {
+                            if (!MonitoringService.this.mIsRunning) {
+                                throw new ServiceNotRunningException();
+                            }
+
                             final int pid = getPid(appInfo);
                             if (pid != PID_NONE) {
                                 Timber.i("PID FOUND -> %d", pid);
                                 startMonitoring(pid, appInfo);
                                 return true;
                             }
-
                             return false;
                         }
                     });
                 } catch (ConditionTimeoutException e) {
                     Timber.e("Impossible to find pid for '%s'.", appInfo.packageName);
                     stopSelf();
+                } catch (ServiceNotRunningException e) {
+                    //Do nothing
                 }
 
             }
         }, 0, TimeUnit.SECONDS);
     }
 
+    @DebugLog
     public int getPid(ApplicationInfo appInfo) {
         List<ActivityManager.RunningAppProcessInfo> runningAppProcessInfos = mActivityManager.getRunningAppProcesses();
 
@@ -151,14 +164,15 @@ public class MonitoringService extends Service {
         return PID_NONE;
     }
 
+    @DebugLog
     public void startActivityToMonitor(String packageName) {
         Intent monitoredAppIntent = getPackageManager().getLaunchIntentForPackage(packageName);
         monitoredAppIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         startActivity(monitoredAppIntent);
     }
 
+    @DebugLog
     public void startMonitoring(final int pid, final ApplicationInfo applicationInfo) {
-        mOrientationChangedEventReceiver.enable();
         mMonitoringHandler = mScheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -169,9 +183,8 @@ public class MonitoringService extends Service {
 
     }
 
-
+    @DebugLog
     public void stopMonitoring() {
-        mOrientationChangedEventReceiver.disable();
         mScheduler.schedule(new Runnable() {
             @Override
             public void run() {
@@ -180,6 +193,18 @@ public class MonitoringService extends Service {
                 }
             }
         }, 0, TimeUnit.SECONDS);
+    }
+
+    public void onEventMainThread(ConnectToServerSuccessEvent event) {
+        mConnection = event.connection;
+        Timber.i("connextion to server successful");
+    }
+
+    public void onEventMainThread(ConnectToServerFailureEvent event) {
+        Timber.i("connexion to server failure --> %s", event.error.getCause());
+        Toast.makeText(this, "Impossible to connect to server", Toast.LENGTH_LONG).show();
+        stopSelf();
+
     }
 
     public void onEventBackgroundThread(MemoryInfoEvent event) {
@@ -204,16 +229,19 @@ public class MonitoringService extends Service {
         //TODO PUSH TO SERVER
     }
 
-
-    private void sendMessage(Message message) {
+    @DebugLog
+    public void sendMessage(Message message) {
         try {
-            mConnection.sendMessage(message);
+            if (mConnection != null && mConnection.isConnected()) {
+                mConnection.sendMessage(message);
+            }
         } catch (IOException e) {
             Timber.w(e, "");
         }
     }
 
-    private Notification buildNotification(ApplicationInfo appInfo) {
+    @DebugLog
+    Notification buildNotification(ApplicationInfo appInfo) {
 
         NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
         inboxStyle.setBigContentTitle("Monitoring " + getPackageManager().getApplicationLabel(appInfo));

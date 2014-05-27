@@ -68,14 +68,15 @@ public class MainActivity extends BaseActivity {
     }
 
     public void startMonitoringService(ApplicationInfo applicationInfo) {
-        Intent serviceIntent = new Intent(MainActivity.this, MonitoringService.class);
 
         SharedPreferences prefs =  getSharedPreferences(ConfigurationActivity.PREF_NAME, MODE_PRIVATE);
-
         String hostname = prefs.getString(ConfigurationActivity.PREF_SERVER_KEY, "localhost");
 
+        Intent serviceIntent = new Intent(MainActivity.this, MonitoringService.class);
+
         serviceIntent.putExtra(MonitoringService.EXTRA_HOSTNAME, hostname);
-        serviceIntent.putExtra(MonitoringService.EXTRA_PORT, 80);
+        serviceIntent.putExtra(MonitoringService.EXTRA_PORT, 8888);
+        serviceIntent.putExtra(MonitoringService.EXTRA_APPLICATION_INFO, applicationInfo);
 
         startService(serviceIntent);
 

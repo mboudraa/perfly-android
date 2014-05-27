@@ -62,4 +62,8 @@ public class Connection {
     public void close() throws IOException {
         mSocket.close();
     }
+
+    public boolean isConnected() {
+        return mSocket.isConnected();
+    }
 }
