@@ -21,4 +21,9 @@ public class CpuInfoMessage implements Message{
     public String serialize() {
         return JsonFormatter.toJson(this);
     }
+
+    @Override
+    public String toString() {
+        return serialize();
+    }
 }

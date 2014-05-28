@@ -1,1 +1,1 @@
-include ':samantha-android'
+include 'samantha-app'

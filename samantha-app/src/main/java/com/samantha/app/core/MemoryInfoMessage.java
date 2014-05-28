@@ -22,7 +22,7 @@ public class MemoryInfoMessage implements Message{
 
     @Override
     public String toString() {
-        return String.format("%d - %s", time, memoryInfo.toString());
+        return serialize();
     }
 
     @Override

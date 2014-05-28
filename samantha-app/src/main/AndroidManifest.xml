@@ -27,15 +27,16 @@
         <receiver android:name=".event.SystemEventListener">
             <intent-filter>
                 <action android:name="android.intent.action.SCREEN_ON"/>
-            </intent-filter>
-            <intent-filter>
                 <action android:name="android.intent.action.SCREEN_OFF"/>
-            </intent-filter>
-            <intent-filter>
                 <action android:name="android.intent.action.BATTERY_CHANGED"/>
-            </intent-filter>
-            <intent-filter>
                 <action android:name="android.intent.action.LOCALE_CHANGED"/>
+                <action android:name="android.intent.action.AIRPLANE_MODE"/>
+                <action android:name="android.intent.action.CAMERA_BUTTON"/>
+                <action android:name="android.intent.action.DREAMING_STARTED"/>
+                <action android:name="android.intent.action.DREAMING_STOPPED"/>
+                <action android:name="android.intent.action.HEADSET_PLUG"/>
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED"/>
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED"/>
             </intent-filter>
         </receiver>
 

@@ -2,6 +2,7 @@ package com.samantha.app.service;
 
 import android.app.*;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.os.IBinder;
@@ -52,6 +53,8 @@ public class MonitoringService extends Service {
     NotificationManager mNotificationManager;
     NotificationCompat.Builder mNotificationBuilder;
     boolean mIsRunning;
+    String mHostname;
+    int mPort;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -74,10 +77,10 @@ public class MonitoringService extends Service {
         super.onStartCommand(intent, flags, startId);
         ApplicationInfo appInfo = intent.getParcelableExtra(EXTRA_APPLICATION_INFO);
         int timeOut = intent.getIntExtra(EXTRA_TIMEOUT, DEFAULT_TIMEOUT);
-        int port = intent.getIntExtra(EXTRA_PORT, DEFAULT_PORT);
-        String hostname = intent.getStringExtra(EXTRA_HOSTNAME);
+        mPort = intent.getIntExtra(EXTRA_PORT, DEFAULT_PORT);
+        mHostname = intent.getStringExtra(EXTRA_HOSTNAME);
 
-        startConnection(hostname, port);
+        startConnection(mHostname, mPort);
         startForeground(NOTIFICATION_ID, buildNotification(appInfo));
         waitForPid(appInfo, timeOut, TimeUnit.SECONDS);
 
@@ -173,6 +176,7 @@ public class MonitoringService extends Service {
 
     @DebugLog
     public void startMonitoring(final int pid, final ApplicationInfo applicationInfo) {
+
         mMonitoringHandler = mScheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -185,6 +189,7 @@ public class MonitoringService extends Service {
 
     @DebugLog
     public void stopMonitoring() {
+
         mScheduler.schedule(new Runnable() {
             @Override
             public void run() {
@@ -223,12 +228,6 @@ public class MonitoringService extends Service {
         //TODO PUSH TO SERVER
     }
 
-    public void onEventBackgroundThread(OrientationChangedEvent event) {
-        Timber.v("%d - %s", event.time,
-                 event.orientation == Configuration.ORIENTATION_LANDSCAPE ? "landscape" : "portrait");
-        //TODO PUSH TO SERVER
-    }
-
     @DebugLog
     public void sendMessage(Message message) {
         try {
@@ -237,6 +236,9 @@ public class MonitoringService extends Service {
             }
         } catch (IOException e) {
             Timber.w(e, "");
+            if(!mConnection.isConnected()){
+                startConnection(mHostname, mPort);
+            }
         }
     }
 

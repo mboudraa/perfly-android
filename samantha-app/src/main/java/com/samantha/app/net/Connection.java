@@ -9,6 +9,8 @@ import java.net.UnknownHostException;
 
 public class Connection {
     final Socket mSocket;
+    private PrintWriter mWriter;
+    private DataOutputStream mDataoutputStream;
 
     public Connection() {
         mSocket = new Socket();
@@ -16,11 +18,16 @@ public class Connection {
 
     public Connection(String hostname, int port) throws UnknownHostException, IOException {
         mSocket = new Socket(hostname, port);
+        mWriter = new PrintWriter(mSocket.getOutputStream());
+        mDataoutputStream = new DataOutputStream(mSocket.getOutputStream());
+
     }
 
 
     public void connect(String hostname, int port) throws IOException {
         mSocket.connect(new InetSocketAddress(hostname, port));
+        mWriter = new PrintWriter(mSocket.getOutputStream());
+        mDataoutputStream = new DataOutputStream(mSocket.getOutputStream());
     }
 
     public void sendMessage(Message message) throws IOException {
@@ -28,15 +35,8 @@ public class Connection {
             throw new NullPointerException("message cannot be null");
         }
 
-        PrintWriter writer = new PrintWriter(mSocket.getOutputStream());
-        try {
-            writer.write(message.serialize());
-            writer.flush();
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
-        }
+        mWriter.write(message.serialize());
+        mWriter.flush();
     }
 
     public void sendMessage(DataMessage message) throws IOException {
@@ -44,23 +44,21 @@ public class Connection {
             throw new NullPointerException("message cannot be null");
         }
         byte[] data = message.getData();
-        DataOutputStream dos = new DataOutputStream(mSocket.getOutputStream());
-        try {
-            final int length = data.length;
-            dos.writeInt(length);
-            if (length > 0) {
-                dos.write(data, 0, length);
-            }
-            dos.flush();
-        } finally {
-            if (dos != null) {
-                dos.close();
-            }
+        final int length = data.length;
+
+        mDataoutputStream.writeInt(length);
+        if (length > 0) {
+            mDataoutputStream.write(data, 0, length);
         }
+        mDataoutputStream.flush();
+
     }
 
     public void close() throws IOException {
+        mWriter.close();
+        mDataoutputStream.close();
         mSocket.close();
+
     }
 
     public boolean isConnected() {

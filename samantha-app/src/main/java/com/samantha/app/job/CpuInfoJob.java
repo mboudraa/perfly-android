@@ -21,7 +21,7 @@ public class CpuInfoJob extends Job {
 
 
     public CpuInfoJob(Context context, int pid, ApplicationInfo appInfo) {
-        super(new Params(1).setRequiresNetwork(false).setPersistent(false));
+        super(new Params(Priority.NORMAL).setRequiresNetwork(false).setPersistent(false).delayInMs(0));
         mApplicationInfo = appInfo;
         mPid = pid;
     }

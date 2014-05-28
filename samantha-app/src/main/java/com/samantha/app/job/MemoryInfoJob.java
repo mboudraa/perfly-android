@@ -24,7 +24,7 @@ public class MemoryInfoJob extends Job {
 
 
     public MemoryInfoJob(Context context, int pid, ApplicationInfo appInfo) {
-        super(new Params(1).setRequiresNetwork(false).setPersistent(false));
+        super(new Params(Priority.NORMAL).setRequiresNetwork(false).setPersistent(false).delayInMs(0));
         mActivityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         mDalvikLimit = mActivityManager.getMemoryClass() * 1024;
 
