@@ -17,19 +17,17 @@ import java.util.Date;
 public class MemoryInfoJob extends Job {
 
 
-    private final ApplicationInfo mApplicationInfo;
     private final ActivityManager mActivityManager;
     private final int mPid;
     private int mDalvikLimit;
 
 
-    public MemoryInfoJob(Context context, int pid, ApplicationInfo appInfo) {
+    public MemoryInfoJob(Context context, int pid) {
         super(new Params(Priority.NORMAL).setRequiresNetwork(false).setPersistent(false).delayInMs(0));
         mActivityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         mDalvikLimit = mActivityManager.getMemoryClass() * 1024;
 
         mPid = pid;
-        mApplicationInfo = appInfo;
     }
 
     @Override
@@ -50,7 +48,7 @@ public class MemoryInfoJob extends Job {
             int appNative = appTotal - appDalvik;
 
             MemoryInfo memoryInfo = new MemoryInfo(mDalvikLimit, appTotal, appDalvik);
-            EventBus.getDefault().post(new MemoryInfoEvent(mApplicationInfo, memoryInfo, time));
+            EventBus.getDefault().post(new MemoryInfoEvent(memoryInfo, time));
         }
 
     }

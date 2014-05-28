@@ -4,13 +4,12 @@ import com.google.gson.annotations.Expose;
 import com.samantha.app.net.Message;
 import com.samantha.app.utils.JsonFormatter;
 
-public class CpuInfoMessage implements Message{
+public class CpuInfoMessage implements Message {
 
     @Expose
     public final CpuInfo cpuInfo;
     @Expose
     public final long time;
-
 
     public CpuInfoMessage(CpuInfo cpuInfo, long time) {
         this.cpuInfo = cpuInfo;

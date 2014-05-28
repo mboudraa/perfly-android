@@ -16,13 +16,11 @@ import java.util.Date;
 public class CpuInfoJob extends Job {
 
 
-    private final ApplicationInfo mApplicationInfo;
     private final int mPid;
 
 
-    public CpuInfoJob(Context context, int pid, ApplicationInfo appInfo) {
+    public CpuInfoJob(Context context, int pid) {
         super(new Params(Priority.NORMAL).setRequiresNetwork(false).setPersistent(false).delayInMs(0));
-        mApplicationInfo = appInfo;
         mPid = pid;
     }
 
@@ -50,7 +48,7 @@ public class CpuInfoJob extends Job {
         int total = userUsage + kernelUsage;
 
         EventBus.getDefault()
-                .post(new CpuInfoEvent(mApplicationInfo, new CpuInfo(total, userUsage, kernelUsage), time));
+                .post(new CpuInfoEvent(new CpuInfo(total, userUsage, kernelUsage), time));
     }
 
     @Override
