@@ -1,17 +1,17 @@
-package com.samantha.app.sys;
+package com.samantha.app.service.sys;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import com.path.android.jobqueue.JobManager;
 import com.samantha.app.SamApplication;
-import com.samantha.app.core.ApplicationState;
+import com.samantha.app.core.sys.ApplicationState;
 import com.samantha.app.event.CpuInfoEvent;
 import com.samantha.app.event.MemoryInfoEvent;
 import com.samantha.app.event.SendMessageEvent;
 import com.samantha.app.job.CpuInfoJob;
 import com.samantha.app.job.MemoryInfoJob;
-import com.samantha.app.net.CpuInfoMessage;
-import com.samantha.app.net.MemoryInfoMessage;
+import com.samantha.app.core.net.CpuInfoMessage;
+import com.samantha.app.core.net.MemoryInfoMessage;
 import de.greenrobot.event.EventBus;
 import hugo.weaving.DebugLog;
 

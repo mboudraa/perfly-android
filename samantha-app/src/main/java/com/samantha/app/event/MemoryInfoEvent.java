@@ -1,6 +1,6 @@
 package com.samantha.app.event;
 
-import com.samantha.app.core.MemoryInfo;
+import com.samantha.app.core.sys.MemoryInfo;
 
 public class MemoryInfoEvent extends MonitoringEvent {
 

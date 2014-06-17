@@ -1,4 +1,4 @@
-package com.samantha.app.ui.widget;
+package com.samantha.app.ui;
 
 /*
  * Copyright (C) 2014 Chris Banes

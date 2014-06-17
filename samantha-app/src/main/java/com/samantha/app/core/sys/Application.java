@@ -1,4 +1,4 @@
-package com.samantha.app.core;
+package com.samantha.app.core.sys;
 
 import android.graphics.drawable.Drawable;
 import com.fasterxml.jackson.annotation.JsonCreator;

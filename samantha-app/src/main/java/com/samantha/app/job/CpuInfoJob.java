@@ -2,7 +2,7 @@ package com.samantha.app.job;
 
 import android.content.Context;
 import android.text.TextUtils;
-import com.samantha.app.core.CpuInfo;
+import com.samantha.app.core.sys.CpuInfo;
 import com.samantha.app.event.CpuInfoEvent;
 import de.greenrobot.event.EventBus;
 import timber.log.Timber;

@@ -1,11 +1,14 @@
 package com.samantha.app;
 
 import android.app.Application;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.path.android.jobqueue.JobManager;
 import com.path.android.jobqueue.config.Configuration;
 import timber.log.Timber;
 
 public class SamApplication extends Application{
+
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static SamApplication sInstance;
     private JobManager mJobManager;

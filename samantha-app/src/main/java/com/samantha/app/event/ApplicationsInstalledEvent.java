@@ -1,6 +1,6 @@
 package com.samantha.app.event;
 
-import com.samantha.app.core.Application;
+import com.samantha.app.core.sys.Application;
 
 import java.util.ArrayList;
 import java.util.Collection;

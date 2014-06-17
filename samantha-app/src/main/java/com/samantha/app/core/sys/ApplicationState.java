@@ -1,4 +1,4 @@
-package com.samantha.app.core;
+package com.samantha.app.core.sys;
 
 import android.app.ActivityManager;
 

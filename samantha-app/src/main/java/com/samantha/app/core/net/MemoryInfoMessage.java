@@ -1,10 +1,7 @@
-package com.samantha.app.net;
+package com.samantha.app.core.net;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
-import com.samantha.app.core.MemoryInfo;
-import com.samantha.app.net.Message;
+import com.samantha.app.core.sys.MemoryInfo;
 import com.samantha.app.utils.JsonFormatter;
 
 public class MemoryInfoMessage implements Message{

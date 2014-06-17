@@ -1,6 +1,6 @@
 package com.samantha.app.event;
 
-import com.samantha.app.core.CpuInfo;
+import com.samantha.app.core.sys.CpuInfo;
 
 public class CpuInfoEvent extends MonitoringEvent {
 

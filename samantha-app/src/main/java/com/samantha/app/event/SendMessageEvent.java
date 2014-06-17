@@ -1,7 +1,6 @@
 package com.samantha.app.event;
 
-import com.samantha.app.net.CpuInfoMessage;
-import com.samantha.app.net.Message;
+import com.samantha.app.core.net.Message;
 
 public class SendMessageEvent {
 

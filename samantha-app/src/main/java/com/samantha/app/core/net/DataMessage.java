@@ -1,4 +1,4 @@
-package com.samantha.app.net;
+package com.samantha.app.core.net;
 
 public interface DataMessage {
 

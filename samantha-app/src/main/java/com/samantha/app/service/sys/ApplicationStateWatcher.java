@@ -1,9 +1,9 @@
-package com.samantha.app.sys;
+package com.samantha.app.service.sys;
 
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import com.samantha.app.core.ApplicationState;
+import com.samantha.app.core.sys.ApplicationState;
 
 import java.util.Date;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.samantha.app.core.ApplicationState.State;
+import static com.samantha.app.core.sys.ApplicationState.State;
 
 public class ApplicationStateWatcher {
 

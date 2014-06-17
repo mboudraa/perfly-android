@@ -12,9 +12,9 @@ import com.samantha.app.R;
 import com.samantha.app.activity.MonitoringActivity;
 import com.samantha.app.event.SendMessageEvent;
 import com.samantha.app.exception.MonitoringException;
-import com.samantha.app.net.Message;
-import com.samantha.app.sys.Monitoring;
-import com.samantha.app.ws.WebSocketClient;
+import com.samantha.app.core.net.Message;
+import com.samantha.app.service.sys.Monitoring;
+import com.samantha.app.core.net.socket.WebSocketClient;
 import de.greenrobot.event.EventBus;
 import hugo.weaving.DebugLog;
 import timber.log.Timber;
@@ -24,6 +24,8 @@ import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+
+import static com.samantha.app.SamApplication.*;
 
 public class MonitoringService extends Service implements WebSocketClient.Listener {
 
@@ -174,8 +176,13 @@ public class MonitoringService extends Service implements WebSocketClient.Listen
 
     @DebugLog
     @Override
-    public void onMessage(String message) {
+    public void onMessage(String messageString) {
+        try {
+            Message message = OBJECT_MAPPER.readValue(messageString, Message.class);
 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

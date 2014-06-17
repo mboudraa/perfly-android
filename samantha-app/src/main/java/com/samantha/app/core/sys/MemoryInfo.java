@@ -1,4 +1,4 @@
-package com.samantha.app.core;
+package com.samantha.app.core.sys;
 
 import com.google.gson.annotations.Expose;
 

@@ -3,7 +3,7 @@ package com.samantha.app.job;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.os.Debug;
-import com.samantha.app.core.MemoryInfo;
+import com.samantha.app.core.sys.MemoryInfo;
 import com.samantha.app.event.MemoryInfoEvent;
 import de.greenrobot.event.EventBus;
 import timber.log.Timber;

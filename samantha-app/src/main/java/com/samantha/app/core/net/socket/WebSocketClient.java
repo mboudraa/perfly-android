@@ -1,4 +1,4 @@
-package com.samantha.app.ws;
+package com.samantha.app.core.net.socket;
 
 
 import android.os.Handler;

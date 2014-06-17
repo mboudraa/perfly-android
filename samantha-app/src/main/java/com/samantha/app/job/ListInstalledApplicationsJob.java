@@ -6,7 +6,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
-import com.samantha.app.core.Application;
+import com.samantha.app.core.sys.Application;
 import com.samantha.app.event.ApplicationsInstalledEvent;
 import de.greenrobot.event.EventBus;
 
