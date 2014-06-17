@@ -1,6 +1,7 @@
-package com.samantha.app.core;
+package com.samantha.app.net;
 
 import com.google.gson.annotations.Expose;
+import com.samantha.app.core.CpuInfo;
 import com.samantha.app.net.Message;
 import com.samantha.app.utils.JsonFormatter;
 

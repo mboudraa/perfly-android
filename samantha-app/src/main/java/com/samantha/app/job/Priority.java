@@ -1,6 +1,6 @@
 package com.samantha.app.job;
 
-public final class Priority {
+final class Priority {
 
     private Priority(){}
 

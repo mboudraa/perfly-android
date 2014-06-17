@@ -1,9 +1,11 @@
 package com.samantha.app.utils;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.text.TextUtils;
 import android.util.Base64;
 
 import java.io.ByteArrayOutputStream;
@@ -20,11 +22,7 @@ public final class ImageUtils {
 
     public static String drawableToBase64(Drawable drawable) {
         Bitmap bmp = drawableToBitmap(drawable);
-        try {
-            return bitmapToBase64(bmp);
-        } finally {
-            bmp.recycle();
-        }
+        return bitmapToBase64(bmp);
     }
 
     public static Bitmap drawableToBitmap(Drawable drawable) {
@@ -53,5 +51,25 @@ public final class ImageUtils {
         String encoded = Base64.encodeToString(byteArray, Base64.DEFAULT);
 
         return encoded;
+    }
+
+    public static Bitmap base64ToBitmap(String encoded) {
+
+        if (TextUtils.isEmpty(encoded)) {
+            return null;
+        }
+
+        byte[] decodedString = Base64.decode(encoded, Base64.DEFAULT);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+        return bitmap;
+
+
+    }
+
+
+    public static Drawable base64ToDrawable(String encoded) {
+        Bitmap bitmap = base64ToBitmap(encoded);
+        return bitmap == null ? null : new BitmapDrawable(bitmap);
     }
 }

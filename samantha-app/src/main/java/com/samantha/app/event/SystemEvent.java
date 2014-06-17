@@ -1,6 +1,6 @@
 package com.samantha.app.event;
 
-public class SystemEvent extends Event{
+public class SystemEvent extends MonitoringEvent {
 
     public final String action;
 

@@ -3,7 +3,7 @@ package com.samantha.app.event;
 import android.content.pm.ApplicationInfo;
 import com.samantha.app.core.ApplicationState;
 
-public class ApplicationStateChangedEvent extends Event {
+public class ApplicationStateChangedEvent extends MonitoringEvent {
 
     public final ApplicationInfo applicationInfo;
     public final ApplicationState.State state;

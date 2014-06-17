@@ -4,11 +4,6 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import com.samantha.app.core.ApplicationState;
-import com.samantha.app.event.ApplicationPidChangedEvent;
-import com.samantha.app.event.ApplicationStateChangedEvent;
-import com.samantha.app.event.SystemEvent;
-import de.greenrobot.event.EventBus;
-import timber.log.Timber;
 
 import java.util.Date;
 import java.util.List;
@@ -22,34 +17,37 @@ import static com.samantha.app.core.ApplicationState.State;
 public class ApplicationStateWatcher {
 
 
-
-    private final ApplicationInfo mApplicationInfo;
     private ScheduledExecutorService mScheduler = Executors.newScheduledThreadPool(1);
     private ScheduledFuture mScheduledFuture;
     private ActivityManager mActivityManager;
 
     private int mCurrentPid = ApplicationState.PID_NONE;
     private State mCurrentState = State.NOT_RUNNING;
+    private Listener mListener;
 
-    public ApplicationStateWatcher(Context context, ApplicationInfo applicationInfo) {
-        mApplicationInfo = applicationInfo;
+    ApplicationStateWatcher(Context context) {
         mActivityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
     }
 
 
-    private ScheduledFuture startWatching() {
-        return mScheduler.scheduleAtFixedRate(new Runnable() {
+    private void stopWatching() {
+        mScheduledFuture.cancel(false);
+    }
+
+
+    private void startWatching(final ApplicationInfo applicationInfo) {
+        mScheduledFuture = mScheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                ApplicationState state = getApplicationState();
+                ApplicationState state = getApplicationState(applicationInfo);
                 long time = new Date().getTime();
                 if (mCurrentPid != state.pid) {
-                    EventBus.getDefault().post(new ApplicationPidChangedEvent(mApplicationInfo, state.pid, time));
+                    mListener.onPidChanged(applicationInfo, state.pid, time);
                     mCurrentPid = state.pid;
                 }
 
-                if(mCurrentState != state.state){
-                    EventBus.getDefault().post(new ApplicationStateChangedEvent(mApplicationInfo, state.state, time));
+                if (mCurrentState != state.state) {
+                    mListener.onStateChanged(applicationInfo, state.state, time);
                     mCurrentState = state.state;
                 }
 
@@ -59,14 +57,13 @@ public class ApplicationStateWatcher {
     }
 
 
-    private ApplicationState getApplicationState() {
+    private ApplicationState getApplicationState(ApplicationInfo applicationInfo) {
 
         List<ActivityManager.RunningAppProcessInfo> runningAppProcessInfos = mActivityManager.getRunningAppProcesses();
 
         if (runningAppProcessInfos != null && !runningAppProcessInfos.isEmpty()) {
             for (ActivityManager.RunningAppProcessInfo processInfo : runningAppProcessInfos) {
-                if (mApplicationInfo.processName.equals(processInfo.processName)) {
-
+                if (applicationInfo.processName.equals(processInfo.processName)) {
                     return new ApplicationState(processInfo.pid, State.get(processInfo.importance));
                 }
             }
@@ -75,18 +72,20 @@ public class ApplicationStateWatcher {
         return new ApplicationState(ApplicationState.PID_NONE, State.NOT_RUNNING);
     }
 
-    public void onEventBackgroundThread(SystemEvent event) {
-        Timber.v("%d - %s", event.time, event.action);
-    }
-
-    public void start() {
-        EventBus.getDefault().register(this);
-        mScheduledFuture = startWatching();
+    public void start(ApplicationInfo applicationInfo, Listener listener) {
+        mListener = listener;
+        startWatching(applicationInfo);
     }
 
     public void stop() {
-        mScheduledFuture.cancel(true);
-        EventBus.getDefault().unregister(this);
+        mListener = null;
+        stopWatching();
     }
 
+
+    public interface Listener {
+        void onPidChanged(ApplicationInfo mApplicationInfo, int pid, long time);
+
+        void onStateChanged(ApplicationInfo mApplicationInfo, State state, long time);
+    }
 }

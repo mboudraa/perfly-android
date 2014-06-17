@@ -1,6 +1,6 @@
 package com.samantha.app.event;
 
-public class OrientationChangedEvent extends Event {
+public class OrientationChangedEvent extends MonitoringEvent {
 
     public final int orientation;
 
