@@ -10,7 +10,7 @@ public abstract class BaseJob extends Job {
 
     protected BaseJob(Context context) {
         super(new Params(Priority.NORMAL).setRequiresNetwork(false).setPersistent(false).delayInMs(0));
-        mContext = context;
+        mContext = context.getApplicationContext();
     }
 
     @Override

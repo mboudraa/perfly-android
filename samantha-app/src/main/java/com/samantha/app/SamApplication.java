@@ -8,7 +8,6 @@ import timber.log.Timber;
 
 public class SamApplication extends Application{
 
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static SamApplication sInstance;
     private JobManager mJobManager;

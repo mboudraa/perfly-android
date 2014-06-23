@@ -10,24 +10,25 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import com.samantha.app.R;
 import com.samantha.app.activity.MonitoringActivity;
+import com.samantha.app.core.json.JsonFormatter;
+import com.samantha.app.core.net.Connection;
+import com.samantha.app.core.net.Message;
+import com.samantha.app.core.net.MessageWrapper;
+import com.samantha.app.core.net.ServerConnection;
+import com.samantha.app.event.OnConnectionEvent;
 import com.samantha.app.event.SendMessageEvent;
 import com.samantha.app.exception.MonitoringException;
-import com.samantha.app.core.net.Message;
 import com.samantha.app.service.sys.Monitoring;
-import com.samantha.app.core.net.socket.WebSocketClient;
 import de.greenrobot.event.EventBus;
 import hugo.weaving.DebugLog;
 import timber.log.Timber;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
-import static com.samantha.app.SamApplication.*;
-
-public class MonitoringService extends Service implements WebSocketClient.Listener {
+public class MonitoringService extends Service implements Connection.Listener {
 
 
     public static final String EXTRA_APPLICATION_INFO = "APPLICATION_INFO_EXTRA";
@@ -41,10 +42,11 @@ public class MonitoringService extends Service implements WebSocketClient.Listen
     private ScheduledFuture mSocketScheduledFuture;
     private NotificationManager mNotificationManager;
     private NotificationCompat.Builder mNotificationBuilder;
-    private WebSocketClient mWebSocketClient;
-    private boolean mSocketConnected;
+    private Connection mConnection;
     private Monitoring mMonitoring;
     private Binder mBinder = new Binder();
+    private MessageHandler mMessageHandler;
+    private boolean mConnected;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -63,10 +65,15 @@ public class MonitoringService extends Service implements WebSocketClient.Listen
     public void onCreate() {
 
         super.onCreate();
-        EventBus.getDefault().register(this);
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mNotificationBuilder = new NotificationCompat.Builder(this);
         mMonitoring = new Monitoring(this);
+        mMessageHandler = new MessageHandler(this);
+        mConnection = new ServerConnection(this);
+
+        EventBus.getDefault().register(this);
+        EventBus.getDefault().register(mMessageHandler);
+
     }
 
 
@@ -79,16 +86,21 @@ public class MonitoringService extends Service implements WebSocketClient.Listen
         final String hostname = intent.getStringExtra(EXTRA_HOSTNAME);
 
 
-        startConnection(hostname, port);
+        if (!isConnectionOpen()) {
+            mConnection.setHostname(hostname);
+            mConnection.setPort(port);
+            openConnection();
+        }
 
         return START_NOT_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        EventBus.getDefault().unregister(this);
         stopMonitoring();
         closeConnection();
+        EventBus.getDefault().unregister(mMessageHandler);
+        EventBus.getDefault().unregister(this);
     }
 
 
@@ -118,30 +130,24 @@ public class MonitoringService extends Service implements WebSocketClient.Listen
     }
 
     @DebugLog
-    public void startConnection(final String hostname, final int port) {
-
-        if (!mSocketConnected) {
-            final String wsuri = String.format("ws://%s:%d", hostname, port);
-            mWebSocketClient = new WebSocketClient(URI.create(wsuri), this, null);
-            mWebSocketClient.connect();
-        }
+    public void openConnection() {
+        mConnection.open();
     }
+
 
     @DebugLog
     public void closeConnection() {
-        if (mWebSocketClient != null) {
-            mWebSocketClient.disconnect();
-        }
+        mConnection.close();
     }
 
     public void onEventBackgroundThread(SendMessageEvent event) {
-        sendMessage(event.message);
+        sendMessage(event.message, event.address);
     }
 
     @DebugLog
-    public void sendMessage(Message message) {
-        if (mSocketConnected) {
-            mWebSocketClient.send(message.serialize());
+    public void sendMessage(Message message, String address) {
+        if (isConnectionOpen()) {
+            mConnection.sendMessage(message, address);
         }
     }
 
@@ -164,47 +170,42 @@ public class MonitoringService extends Service implements WebSocketClient.Listen
         return mNotificationBuilder.build();
     }
 
-    @DebugLog
+    public boolean isConnectionOpen() {
+        return mConnection != null && mConnected;
+    }
+
     @Override
-    public void onConnect() {
+    public void onOpen() {
         Timber.i("Socket connected");
-        mSocketConnected = true;
+        mConnected = true;
         if (mSocketScheduledFuture != null) {
             mSocketScheduledFuture.cancel(true);
         }
+
+        EventBus.getDefault().post(new OnConnectionEvent(true));
     }
 
     @DebugLog
     @Override
     public void onMessage(String messageString) {
         try {
-            Message message = OBJECT_MAPPER.readValue(messageString, Message.class);
-
+            mMessageHandler.onMessage(JsonFormatter.fromJson(messageString, MessageWrapper.class));
         } catch (IOException e) {
-            e.printStackTrace();
+            Timber.e(e, "Error parsing message");
         }
     }
 
-    @Override
-    public void onMessage(byte[] data) {
-
-    }
 
     @DebugLog
     @Override
-    public void onDisconnect(int code, String reason) {
-        mSocketConnected = false;
+    public void onClose() {
         Timber.i("Socket disconnected");
+        mConnected = false;
+        EventBus.getDefault().post(new OnConnectionEvent(false));
     }
 
     @Override
     public void onError(Exception error) {
-        if (error instanceof IOException) {
-            mSocketConnected = false;
-            Timber.i("Socket disconnected");
-        } else {
-            Timber.w(error, "WebSocket error");
-        }
-
+        Timber.w(error, "Socket error");
     }
 }
