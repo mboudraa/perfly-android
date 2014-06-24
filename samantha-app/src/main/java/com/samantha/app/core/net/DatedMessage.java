@@ -9,8 +9,8 @@ public class DatedMessage<T> extends Message<T> {
     public final long time;
 
     @JsonCreator
-    public DatedMessage(@JsonProperty T object, @JsonProperty long time) {
-        super(object);
+    public DatedMessage(@JsonProperty T body, @JsonProperty long time, @JsonProperty String address) {
+        super(body, address);
         this.time = time;
     }
 

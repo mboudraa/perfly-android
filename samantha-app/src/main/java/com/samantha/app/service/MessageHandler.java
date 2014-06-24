@@ -3,13 +3,14 @@ package com.samantha.app.service;
 import android.content.Context;
 import com.samantha.app.SamApplication;
 import com.samantha.app.core.net.Message;
-import com.samantha.app.core.net.MessageWrapper;
 import com.samantha.app.core.sys.Application;
 import com.samantha.app.event.*;
 import com.samantha.app.job.ListInstalledApplicationsJob;
 import de.greenrobot.event.EventBus;
+import timber.log.Timber;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 public class MessageHandler {
 
@@ -17,64 +18,43 @@ public class MessageHandler {
     private EventBus mEventBus = EventBus.getDefault();
 
 
-    private int mCurrentIndex;
-    private ArrayList<Application> mInstalledApplications = new ArrayList<>();
-
     public MessageHandler(Context context) {
         mContext = context;
     }
 
-    public void onMessage(MessageWrapper messageWrapper) {
-        switch (messageWrapper.address) {
+    public void onMessage(Message message) {
+        switch (message.address) {
             case "android.apps.get":
                 SamApplication.getInstance()
                               .getJobManager()
                               .addJobInBackground(new ListInstalledApplicationsJob(mContext));
                 break;
 
-            case "vertx.app.post.ok":
-                sendApplication(mCurrentIndex);
+            case "android.monitoring.start":
+                String packageName = ((Map<String, String>) message.body).get("packageName");
+                mEventBus.post(new StartMonitoringEvent(packageName));
+                break;
+
+            case "android.monitoring.stop":
                 break;
         }
     }
 
     public void onEvent(ApplicationsInstalledEvent event) {
-        mInstalledApplications.clear();
-        mInstalledApplications.addAll(event.applications);
-//        sendApplication(mCurrentIndex);
-        sendAll();
+        sendApplications(event.applications);
     }
 
-    private void sendAll() {
-        mEventBus.post(new OnStartSendingApplicationsEvent(mInstalledApplications.size()));
+    private void sendApplications(ArrayList<Application> applications) {
+        mEventBus.post(new OnStartSendingApplicationsEvent(applications.size()));
 
-        for (int i = 0; i < mInstalledApplications.size(); i++) {
+        for (int i = 0; i < applications.size(); i++) {
             mEventBus.post(
-                    new SendMessageEvent(new Message<Application>(mInstalledApplications.get(i)), "vertx.app.post"));
-            mEventBus.post(new OnProgressSendingApplicationsEvent(mInstalledApplications.get(i), (i + 1)));
+                    new SendMessageEvent(new Message<Application>(applications.get(i), "vertx.app.post")));
+            mEventBus.post(new OnProgressSendingApplicationsEvent(applications.get(i), (i + 1)));
         }
         mEventBus.post(new OnFinishSendingApplicationsEvent());
 
     }
 
-    private void sendApplication(int index) {
 
-        final int total = mInstalledApplications.size();
-
-
-        if (mCurrentIndex == 0) {
-            mEventBus.post(new OnStartSendingApplicationsEvent(total));
-
-        }
-        if (mCurrentIndex < total) {
-            final Application app = mInstalledApplications.get(mCurrentIndex);
-            mEventBus.post(new SendMessageEvent(new Message<Application>(app), "vertx.app.post"));
-            mEventBus.post(new OnProgressSendingApplicationsEvent(app, ++mCurrentIndex));
-        } else {
-            mEventBus.post(new OnFinishSendingApplicationsEvent());
-
-        }
-
-
-    }
 }

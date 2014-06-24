@@ -1,8 +1,6 @@
 package com.samantha.app.activity;
 
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
 import com.samantha.app.service.MonitoringService;
@@ -38,22 +36,16 @@ public class MainActivity extends BaseActivity {
 
         boolean isMonitoring = monitoringService.isMonitoring();
         try {
-
             if (mStopMonitoringIfRunning && isMonitoring) {
                 monitoringService.stopMonitoring();
                 isMonitoring = false;
             }
 
             if (!isMonitoring) {
-                ApplicationInfo appInfo = getPackageManager().getApplicationInfo(mPackageName, 0);
-                monitoringService.startMonitoring(appInfo);
+                monitoringService.startMonitoring(mPackageName);
             } else {
                 Timber.w("Monitoring is already running");
             }
-
-        } catch (PackageManager.NameNotFoundException e) {
-            Timber.e("Application with package name '%s' not found. Monitoring could not be started",
-                     mPackageName);
         } finally {
             finish();
         }

@@ -2,6 +2,7 @@ package com.samantha.app.core.net;
 
 import android.os.Handler;
 import android.os.Looper;
+import com.samantha.app.core.json.JsonFormatter;
 import timber.log.Timber;
 
 import java.io.IOException;
@@ -38,7 +39,6 @@ public class TcpConnection extends Connection {
     }
 
 
-
     public void open() {
 
         mConnectThread = new Thread(new Runnable() {
@@ -68,8 +68,8 @@ public class TcpConnection extends Connection {
                     byte[] buffer = new byte[1024];
                     while ((readBytes = inputStream.read(buffer, 0, 1024)) >= 0) {
                         if (readBytes > 0) {
-                            String message = new String(buffer, 0, readBytes, "UTF-8");
-                            notifyMessage(message);
+                            String messageString = new String(buffer, 0, readBytes, "UTF-8");
+                            notifyMessage(JsonFormatter.fromJson(messageString, Message.class));
                         } else {
                             break;
                         }
@@ -99,12 +99,12 @@ public class TcpConnection extends Connection {
     }
 
 
-    public void sendMessage(final Message message, String address) {
+    public void sendMessage(final Message message) {
         if (mSocket != null) {
             try {
                 PrintWriter writer = new PrintWriter(mSocket.getOutputStream());
 
-                writer.print(new MessageWrapper(message, address).serialize() + EOC);
+                writer.print(message.serialize() + EOC);
                 writer.flush();
             } catch (IOException e) {
                 notifyError(e);
@@ -141,17 +141,17 @@ public class TcpConnection extends Connection {
 //        mHandler.post(new Runnable() {
 //            @Override
 //            public void run() {
-                mListener.onError(e);
+        mListener.onError(e);
 //            }
 //        });
     }
 
 
-    private void notifyMessage(final String s) {
+    private void notifyMessage(final Message message) {
 //        mHandler.post(new Runnable() {
 //            @Override
 //            public void run() {
-                mListener.onMessage(s);
+        mListener.onMessage(message);
 //            }
 //        });
     }

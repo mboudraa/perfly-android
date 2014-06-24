@@ -18,7 +18,7 @@ public abstract class Connection {
 
     public abstract void close();
 
-    public abstract void sendMessage(Message message, String address);
+    public abstract void sendMessage(Message message);
 
     public abstract boolean isOpen();
 
@@ -41,7 +41,7 @@ public abstract class Connection {
     public static interface Listener {
         void onOpen();
 
-        void onMessage(String s);
+        void onMessage(Message s);
 
         void onClose();
 

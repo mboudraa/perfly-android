@@ -7,7 +7,6 @@ import com.samantha.app.SamApplication;
 import com.samantha.app.core.net.DatedMessage;
 import com.samantha.app.core.sys.ApplicationState;
 import com.samantha.app.core.sys.CpuInfo;
-import com.samantha.app.core.sys.MemoryInfo;
 import com.samantha.app.event.CpuInfoEvent;
 import com.samantha.app.event.MemoryInfoEvent;
 import com.samantha.app.event.SendMessageEvent;
@@ -17,10 +16,8 @@ import de.greenrobot.event.EventBus;
 import hugo.weaving.DebugLog;
 
 import java.util.Date;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Monitoring implements ApplicationStateWatcher.Listener {
 
@@ -32,6 +29,7 @@ public class Monitoring implements ApplicationStateWatcher.Listener {
     private ApplicationStateWatcher mAppStateWatcher;
     private int mPid = ApplicationState.PID_NONE;
     private EventBus mEventBus = EventBus.getDefault();
+    private SystemInfo mSystemInfo = new SystemInfo();
 
     public Monitoring(Context context) {
         mContext = context.getApplicationContext();
@@ -49,15 +47,14 @@ public class Monitoring implements ApplicationStateWatcher.Listener {
             throw new IllegalStateException("Monitoring must be stopped before starting it");
         }
 
-        mEventBus.register(this);
+        mEventBus.register(mSystemInfo);
+
         mAppStateWatcher.start(applicationInfo, this);
         mIsmonitoring = true;
         mJobScheduledFuture = mJobScheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                final long time = new Date().getTime();
-                mJobManager.addJobInBackground(new MemoryInfoJob(mContext, mPid, time));
-                mJobManager.addJobInBackground(new CpuInfoJob(mContext, mPid, time));
+                mSystemInfo.dump(mPid);
             }
 
         }, 0, 1, TimeUnit.SECONDS);
@@ -76,24 +73,11 @@ public class Monitoring implements ApplicationStateWatcher.Listener {
         }, 0, TimeUnit.SECONDS);
         mIsmonitoring = false;
         mAppStateWatcher.stop();
-        mEventBus.unregister(this);
+        mEventBus.unregister(mSystemInfo);
     }
 
     public boolean isMonitoring() {
         return mIsmonitoring;
-    }
-
-
-    public void onEventBackgroundThread(MemoryInfoEvent event) {
-        mEventBus.post(
-                new SendMessageEvent(new DatedMessage<MemoryInfo>(event.memoryInfo, event.time),
-                                     "android.monitoring.memory"));
-    }
-
-    public void onEventBackgroundThread(CpuInfoEvent event) {
-        mEventBus.post(
-                new SendMessageEvent(new DatedMessage<CpuInfo>(event.cpuInfo, event.time),
-                                     "android.monitoring.cpu"));
     }
 
 
@@ -105,5 +89,51 @@ public class Monitoring implements ApplicationStateWatcher.Listener {
     @Override
     public void onStateChanged(ApplicationInfo mApplicationInfo, ApplicationState.State state, long time) {
 
+    }
+
+
+    class SystemInfo {
+
+        final AtomicInteger mIncrement;
+        long time;
+        final ConcurrentHashMap<String, Object> mMap = new ConcurrentHashMap<>();
+
+        SystemInfo() {
+            mIncrement = new AtomicInteger(2);
+        }
+
+        public void dump(int pid) {
+            time = new Date().getTime();
+            mMap.put("time", time);
+            mJobManager.addJobInBackground(new MemoryInfoJob(mContext, pid, time));
+            mJobManager.addJobInBackground(new CpuInfoJob(mContext, pid, time));
+        }
+
+
+        private void post() {
+            mEventBus.post(
+                    new SendMessageEvent(
+                            new DatedMessage<Object>(mMap, time, "android.monitoring.progress")));
+        }
+
+        public void onEventBackgroundThread(MemoryInfoEvent event) {
+
+            mMap.put("memoryInfo", event.memoryInfo);
+            int result = mIncrement.decrementAndGet();
+            if (result == 0) {
+                mIncrement.set(2);
+                post();
+            }
+
+        }
+
+        public void onEventBackgroundThread(CpuInfoEvent event) {
+            mMap.put("cpuInfo", event.cpuInfo);
+            int result = mIncrement.decrementAndGet();
+            if (result == 0) {
+                mIncrement.set(2);
+                post();
+            }
+        }
     }
 }

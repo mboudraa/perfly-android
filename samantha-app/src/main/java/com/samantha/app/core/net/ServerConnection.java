@@ -63,8 +63,8 @@ public class ServerConnection extends Connection implements Connection.Listener 
     }
 
     @Override
-    public void sendMessage(Message message, String address) {
-        mServerConnection.sendMessage(message, address);
+    public void sendMessage(Message message) {
+        mServerConnection.sendMessage(message);
     }
 
 
@@ -80,7 +80,7 @@ public class ServerConnection extends Connection implements Connection.Listener 
             @Override
             public void run() {
                 Timber.v("ping");
-                mStatusConnection.sendMessage(new Message<String>(null), "connection.status");
+                mStatusConnection.sendMessage(new Message<String>(null, "connection.status"));
                 mCloseScheduledFuture = mStatusScheduler.schedule(new Runnable() {
                     @Override
                     public void run() {
@@ -93,7 +93,7 @@ public class ServerConnection extends Connection implements Connection.Listener 
     }
 
     @Override
-    public void onMessage(String s) {
+    public void onMessage(Message m) {
         Timber.v("ping ok");
         if (mCloseScheduledFuture != null) {
             mCloseScheduledFuture.cancel(true);

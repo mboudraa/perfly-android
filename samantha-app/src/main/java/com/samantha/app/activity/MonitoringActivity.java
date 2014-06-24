@@ -9,6 +9,9 @@ import com.samantha.app.R;
 
 public class MonitoringActivity extends BaseActivity {
 
+
+    MonitoringService mMonitoringService;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -16,10 +19,13 @@ public class MonitoringActivity extends BaseActivity {
     }
 
     public void onStopMonitoringClicked(View v) {
-        Intent serviceIntent = new Intent(this, MonitoringService.class);
-        stopService(serviceIntent);
-
+        mMonitoringService.stopMonitoring();
         finish();
     }
 
+
+    @Override
+    protected void onServiceConnected(MonitoringService monitoringService) {
+        mMonitoringService = monitoringService;
+    }
 }

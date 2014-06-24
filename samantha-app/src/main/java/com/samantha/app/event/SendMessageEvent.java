@@ -5,10 +5,8 @@ import com.samantha.app.core.net.Message;
 public class SendMessageEvent {
 
     public final Message message;
-    public final String address;
 
-    public SendMessageEvent(Message message, String address) {
+    public SendMessageEvent(Message message) {
         this.message = message;
-        this.address = address;
     }
 }

@@ -5,25 +5,21 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.samantha.app.core.json.JsonFormatter;
-import timber.log.Timber;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Message<T> {
 
-    public final T object;
+    public final T body;
+
+    public final String address;
 
     @JsonCreator
-    public Message(@JsonProperty T object) {
-        this.object = object;
+    public Message(@JsonProperty("body") T body, @JsonProperty("address") String address) {
+        this.body = body;
+        this.address = address;
     }
 
-    @Override
-    public String toString() {
-        try {
-            return JsonFormatter.toJson(this);
-        } catch (JsonProcessingException e) {
-            Timber.w(e, "Impossible to stringify object. Returned super.toString().");
-            return super.toString();
-        }
+    public String serialize() throws JsonProcessingException {
+        return JsonFormatter.toJson(this);
     }
 }

@@ -6,24 +6,23 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import com.samantha.app.R;
 import com.samantha.app.activity.MonitoringActivity;
-import com.samantha.app.core.json.JsonFormatter;
 import com.samantha.app.core.net.Connection;
 import com.samantha.app.core.net.Message;
-import com.samantha.app.core.net.MessageWrapper;
 import com.samantha.app.core.net.ServerConnection;
 import com.samantha.app.event.OnConnectionEvent;
 import com.samantha.app.event.SendMessageEvent;
+import com.samantha.app.event.StartMonitoringEvent;
 import com.samantha.app.exception.MonitoringException;
 import com.samantha.app.service.sys.Monitoring;
 import de.greenrobot.event.EventBus;
 import hugo.weaving.DebugLog;
 import timber.log.Timber;
 
-import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -105,12 +104,19 @@ public class MonitoringService extends Service implements Connection.Listener {
 
 
     @DebugLog
-    public void startMonitoring(ApplicationInfo appInfo) {
+    public void startMonitoring(String packageName) {
+
 
         try {
+            Intent appToMonitor = getPackageManager().getLaunchIntentForPackage(packageName);
+            ApplicationInfo appInfo = getPackageManager().getApplicationInfo(packageName, 0);
+
             startForeground(NOTIFICATION_ID, buildNotification(appInfo));
             mMonitoring.start(appInfo);
-        } catch (IllegalStateException | NullPointerException e) {
+
+            startActivity(appToMonitor);
+
+        } catch (IllegalStateException | NullPointerException | PackageManager.NameNotFoundException e) {
             throw new MonitoringException(e.getMessage(), e);
         }
 
@@ -141,13 +147,17 @@ public class MonitoringService extends Service implements Connection.Listener {
     }
 
     public void onEventBackgroundThread(SendMessageEvent event) {
-        sendMessage(event.message, event.address);
+        sendMessage(event.message);
+    }
+
+    public void onEvent(StartMonitoringEvent event) {
+        startMonitoring(event.packageName);
     }
 
     @DebugLog
-    public void sendMessage(Message message, String address) {
+    public void sendMessage(Message message) {
         if (isConnectionOpen()) {
-            mConnection.sendMessage(message, address);
+            mConnection.sendMessage(message);
         }
     }
 
@@ -187,12 +197,8 @@ public class MonitoringService extends Service implements Connection.Listener {
 
     @DebugLog
     @Override
-    public void onMessage(String messageString) {
-        try {
-            mMessageHandler.onMessage(JsonFormatter.fromJson(messageString, MessageWrapper.class));
-        } catch (IOException e) {
-            Timber.e(e, "Error parsing message");
-        }
+    public void onMessage(Message message) {
+        mMessageHandler.onMessage(message);
     }
 
 
