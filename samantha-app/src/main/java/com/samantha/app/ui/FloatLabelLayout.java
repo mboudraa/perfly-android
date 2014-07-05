@@ -19,6 +19,7 @@ package com.samantha.app.ui;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.os.Parcelable;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -202,4 +203,5 @@ public final class FloatLabelLayout extends FrameLayout {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dps,
                                                getResources().getDisplayMetrics());
     }
+
 }

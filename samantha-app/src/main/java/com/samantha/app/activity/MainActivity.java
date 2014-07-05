@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import com.samantha.app.service.MonitoringService;
-import timber.log.Timber;
 
 public class MainActivity extends BaseActivity {
 
@@ -26,30 +25,15 @@ public class MainActivity extends BaseActivity {
             Intent intent = new Intent(this, ConfigurationActivity.class);
             startActivity(intent);
             finish();
-            return;
         }
     }
 
     @Override
     protected void onServiceConnected(MonitoringService monitoringService) {
-
-
-        boolean isMonitoring = monitoringService.isMonitoring();
-        try {
-            if (mStopMonitoringIfRunning && isMonitoring) {
-                monitoringService.stopMonitoring();
-                isMonitoring = false;
-            }
-
-            if (!isMonitoring) {
-                monitoringService.startMonitoring(mPackageName);
-            } else {
-                Timber.w("Monitoring is already running");
-            }
-        } finally {
+        if (!isFinishing()) {
+            monitoringService.startMonitoring(mPackageName);
             finish();
         }
-
     }
 
 }

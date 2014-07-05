@@ -106,6 +106,9 @@ public class MonitoringService extends Service implements Connection.Listener {
     @DebugLog
     public void startMonitoring(String packageName) {
 
+        if(isMonitoring()){
+            stopMonitoring();
+        }
 
         try {
             Intent appToMonitor = getPackageManager().getLaunchIntentForPackage(packageName);
@@ -124,7 +127,7 @@ public class MonitoringService extends Service implements Connection.Listener {
 
     @DebugLog
     public void stopMonitoring() {
-        if (mMonitoring.isMonitoring()) {
+        if (isMonitoring()) {
             mMonitoring.stop();
             stopForeground(true);
         }
