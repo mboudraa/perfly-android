@@ -24,12 +24,6 @@ public class ServerConnection extends Connection implements Connection.Listener 
         mStatusConnection = new TcpConnection(this);
     }
 
-    public ServerConnection(String hostname, int port, Listener listener) {
-        super(hostname, port, listener);
-        mServerConnection = new TcpConnection(hostname, port, listener);
-        mStatusConnection = new TcpConnection(hostname, port + 1, this);
-    }
-
     @Override
     public Connection setHostname(String hostname) {
         mServerConnection.setHostname(hostname);

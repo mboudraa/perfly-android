@@ -34,11 +34,6 @@ public class TcpConnection extends Connection {
         setListener(listener);
     }
 
-    public TcpConnection(String hostname, int port, Listener listener) {
-        super(hostname, port, listener);
-    }
-
-
     public void open() {
 
         mConnectThread = new Thread(new Runnable() {
@@ -82,6 +77,7 @@ public class TcpConnection extends Connection {
         });
 
         mReadingThread.start();
+
     }
 
     public void close() {
@@ -119,41 +115,29 @@ public class TcpConnection extends Connection {
 
 
     private void notifyClose() {
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                mListener.onClose();
-            }
-        });
+        if (mListener != null) {
+            mListener.onClose();
+        }
     }
 
 
     private void notifyOpen() {
-//        mHandler.post(new Runnable() {
-//            @Override
-//            public void run() {
-        mListener.onOpen();
-//            }
-//        });
+        if (mListener != null) {
+            mListener.onOpen();
+        }
     }
 
     private void notifyError(final Exception e) {
-//        mHandler.post(new Runnable() {
-//            @Override
-//            public void run() {
-        mListener.onError(e);
-//            }
-//        });
+        if (mListener != null) {
+            mListener.onError(e);
+        }
     }
 
 
     private void notifyMessage(final Message message) {
-//        mHandler.post(new Runnable() {
-//            @Override
-//            public void run() {
-        mListener.onMessage(message);
-//            }
-//        });
+        if (mListener != null) {
+            mListener.onMessage(message);
+        }
     }
 
 

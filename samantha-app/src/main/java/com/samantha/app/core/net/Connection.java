@@ -6,14 +6,6 @@ public abstract class Connection {
     protected  int mPort;
     protected  Listener mListener;
 
-    public Connection(){}
-
-    public Connection(String hostname, int port, Listener listener) {
-        mHostname = hostname;
-        mPort = port;
-        mListener = listener;
-    }
-
     public abstract void open();
 
     public abstract void close();

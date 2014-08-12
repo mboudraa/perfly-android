@@ -14,6 +14,7 @@ import com.samantha.app.activity.MonitoringActivity;
 import com.samantha.app.core.net.Connection;
 import com.samantha.app.core.net.Message;
 import com.samantha.app.core.net.ServerConnection;
+import com.samantha.app.core.sys.Device;
 import com.samantha.app.event.OnConnectionEvent;
 import com.samantha.app.event.SendMessageEvent;
 import com.samantha.app.event.StartMonitoringEvent;
@@ -46,6 +47,7 @@ public class MonitoringService extends Service implements Connection.Listener {
     private Binder mBinder = new Binder();
     private MessageHandler mMessageHandler;
     private boolean mConnected;
+    private Device mDevice;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -69,7 +71,7 @@ public class MonitoringService extends Service implements Connection.Listener {
         mMonitoring = new Monitoring(this);
         mMessageHandler = new MessageHandler(this);
         mConnection = new ServerConnection(this);
-
+        mDevice = Device.getInformations(this);
         EventBus.getDefault().register(this);
         EventBus.getDefault().register(mMessageHandler);
 
@@ -194,7 +196,7 @@ public class MonitoringService extends Service implements Connection.Listener {
         if (mSocketScheduledFuture != null) {
             mSocketScheduledFuture.cancel(true);
         }
-
+        sendMessage(new Message(mDevice, "device.connect"));
         EventBus.getDefault().post(new OnConnectionEvent(true));
     }
 
