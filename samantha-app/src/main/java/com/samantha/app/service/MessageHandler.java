@@ -36,7 +36,9 @@ public class MessageHandler {
                 break;
 
             case "android.monitoring.stop":
+                mEventBus.post(new StopMonitoringEvent());
                 break;
+
         }
     }
 

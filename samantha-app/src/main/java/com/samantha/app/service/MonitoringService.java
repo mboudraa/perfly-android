@@ -12,12 +12,14 @@ import android.support.v4.app.NotificationCompat;
 import com.samantha.app.R;
 import com.samantha.app.activity.MonitoringActivity;
 import com.samantha.app.core.net.Connection;
+import com.samantha.app.core.net.MQTTConnection;
 import com.samantha.app.core.net.Message;
 import com.samantha.app.core.net.ServerConnection;
 import com.samantha.app.core.sys.Device;
 import com.samantha.app.event.OnConnectionEvent;
 import com.samantha.app.event.SendMessageEvent;
 import com.samantha.app.event.StartMonitoringEvent;
+import com.samantha.app.event.StopMonitoringEvent;
 import com.samantha.app.exception.MonitoringException;
 import com.samantha.app.service.sys.Monitoring;
 import de.greenrobot.event.EventBus;
@@ -46,7 +48,6 @@ public class MonitoringService extends Service implements Connection.Listener {
     private Monitoring mMonitoring;
     private Binder mBinder = new Binder();
     private MessageHandler mMessageHandler;
-    private boolean mConnected;
     private Device mDevice;
 
     @Override
@@ -70,7 +71,7 @@ public class MonitoringService extends Service implements Connection.Listener {
         mNotificationBuilder = new NotificationCompat.Builder(this);
         mMonitoring = new Monitoring(this);
         mMessageHandler = new MessageHandler(this);
-        mConnection = new ServerConnection(this);
+        mConnection = new MQTTConnection(this);
         mDevice = Device.getInformations(this);
         EventBus.getDefault().register(this);
         EventBus.getDefault().register(mMessageHandler);
@@ -89,7 +90,7 @@ public class MonitoringService extends Service implements Connection.Listener {
 
         if (!isConnectionOpen()) {
             mConnection.setHostname(hostname);
-            mConnection.setPort(port);
+//            mConnection.setPort(port);
             openConnection();
         }
 
@@ -159,6 +160,10 @@ public class MonitoringService extends Service implements Connection.Listener {
         startMonitoring(event.packageName);
     }
 
+    public void onEvent(StopMonitoringEvent event) {
+        stopMonitoring();
+    }
+
     @DebugLog
     public void sendMessage(Message message) {
         if (isConnectionOpen()) {
@@ -186,13 +191,12 @@ public class MonitoringService extends Service implements Connection.Listener {
     }
 
     public boolean isConnectionOpen() {
-        return mConnection != null && mConnected;
+        return mConnection != null && mConnection.isOpen();
     }
 
     @Override
     public void onOpen() {
         Timber.i("Socket connected");
-        mConnected = true;
         if (mSocketScheduledFuture != null) {
             mSocketScheduledFuture.cancel(true);
         }
@@ -211,7 +215,6 @@ public class MonitoringService extends Service implements Connection.Listener {
     @Override
     public void onClose() {
         Timber.i("Socket disconnected");
-        mConnected = false;
         EventBus.getDefault().post(new OnConnectionEvent(false));
     }
 

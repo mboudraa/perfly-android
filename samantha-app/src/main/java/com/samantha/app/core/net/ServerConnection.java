@@ -61,7 +61,6 @@ public class ServerConnection extends Connection implements Connection.Listener 
         mServerConnection.sendMessage(message);
     }
 
-
     @Override
     public boolean isOpen() {
         return mServerConnection.isOpen();
@@ -75,13 +74,14 @@ public class ServerConnection extends Connection implements Connection.Listener 
             public void run() {
                 Timber.v("ping");
                 mStatusConnection.sendMessage(new Message<String>(null, "connection.status"));
+                final long delay = 2;
                 mCloseScheduledFuture = mStatusScheduler.schedule(new Runnable() {
                     @Override
                     public void run() {
-                        Timber.i("Serveur not responding after 1 second. closing Connection...");
+                        Timber.i("Server not responding after %d second(s). closing Connection...", delay);
                         close();
                     }
-                }, 2, TimeUnit.SECONDS);
+                }, delay, TimeUnit.SECONDS);
             }
         }, 1, 3, TimeUnit.SECONDS);
     }
