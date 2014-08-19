@@ -1,23 +1,26 @@
 package com.samantha.app.core.sys;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Point;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.view.Display;
 import android.view.WindowManager;
 
+import java.util.UUID;
+
 public class Device {
 
-    public final String imei;
+    public final String id;
     public final String brand;
     public final String model;
     public final String manufacturer;
     public final String versionName;
     public final Point dimension;
 
-    private Device(String imei, String brand, String model, String manufacturer, String versionName, Point dimension) {
-        this.imei = imei;
+    private Device(String id, String brand, String model, String manufacturer, String versionName, Point dimension) {
+        this.id = id;
         this.brand = brand;
         this.model = model;
         this.manufacturer = manufacturer;
@@ -27,10 +30,8 @@ public class Device {
 
     public static Device getInformations(Context context) {
 
-        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 
-        final String imei = telephonyManager.getDeviceId();
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Point size = new Point();
 
         Display display = wm.getDefaultDisplay();
@@ -41,13 +42,25 @@ public class Device {
             display.getSize(size);
         }
 
-        return new Device(telephonyManager.getDeviceId(),
-                          Build.BRAND,
-                          Build.MODEL,
-                          Build.MANUFACTURER,
-                          Build.VERSION.RELEASE,
-                          size);
+        return new Device(
+                getDeviceId(context),
+                Build.BRAND,
+                Build.MODEL,
+                Build.MANUFACTURER,
+                Build.VERSION.RELEASE,
+                size);
 
+    }
+
+    private static String getDeviceId(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("SAMANTHA", Context.MODE_PRIVATE);
+        final String key = "deviceId";
+        String deviceId = prefs.getString(key, null);
+        if (deviceId == null) {
+            deviceId = UUID.randomUUID().toString().replace("-", "");
+            prefs.edit().putString(key, deviceId).apply();
+        }
+        return deviceId;
     }
 
 }

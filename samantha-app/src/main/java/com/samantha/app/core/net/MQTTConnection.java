@@ -3,13 +3,13 @@ package com.samantha.app.core.net;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.samantha.app.core.json.JsonFormatter;
+import com.samantha.app.core.sys.Device;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import timber.log.Timber;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,17 +19,18 @@ public class MQTTConnection extends Connection implements MqttCallback {
     public static final int QOS_DELIVERY_AT_LEAST_ONCE_WITH_CONFIRMATION = 1;
     public static final int QOS_DELIVERY_ONLY_ONCE_WITH_CONFIRMATION = 2;
 
+    private static final int PORT_DEFAULT = 1883;
     private static final int KEEP_ALIVE_INTERVAL = 5;
+    private static final String TOPIC_PREFIX = "samantha.vertx";
 
-    private static final String CHARSET = "UTF-8";
-
-    public static final int PORT_DEFAULT = 1883;
+    private final Device mDevice;
 
     ExecutorService mExecutor = Executors.newSingleThreadScheduledExecutor();
 
     MqttClient mClient;
 
-    public MQTTConnection(Listener listener) {
+    public MQTTConnection(Device device, Listener listener) {
+        mDevice = device;
         mListener = listener;
     }
 
@@ -49,26 +50,41 @@ public class MQTTConnection extends Connection implements MqttCallback {
 
     @Override
     public void open() {
-        final String uri = String.format("tcp://%s:%d", mHostname, mPort == 0 ? PORT_DEFAULT : mPort);
-        try {
-            final String clientId = UUID.randomUUID().toString();
-            mClient = new MqttClient(uri, clientId, new MemoryPersistence());
-            MqttConnectOptions options = new MqttConnectOptions();
-            options.setKeepAliveInterval(KEEP_ALIVE_INTERVAL);
-            mClient.setCallback(this);
+        mExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final String uri = String.format("tcp://%s:%d", mHostname, mPort == 0 ? PORT_DEFAULT : mPort);
+                    mClient = new MqttClient(uri, mDevice.id, new MemoryPersistence());
+                    MqttConnectOptions options = new MqttConnectOptions();
+                    options.setKeepAliveInterval(KEEP_ALIVE_INTERVAL);
+                    options.setWill(createTopic("device.disconnect"), JsonFormatter.toByteArray(mDevice),
+                                    QOS_DELIVERY_ONCE_NO_CONFIRMATION, true);
+                    mClient.setCallback(MQTTConnection.this);
 
-            mClient.connect(options);
-            mClient.subscribe(clientId + "/#");
+                    mClient.connect(options);
+                    mClient.subscribe(mDevice.id + "/#");
+                    mClient.publish(createTopic("device.connect"), JsonFormatter.toByteArray(mDevice),
+                                    QOS_DELIVERY_ONCE_NO_CONFIRMATION, true);
 
-            if (mListener != null) {
-                mListener.onOpen();
+                    if (mListener != null) {
+                        mListener.onOpen();
+                    }
+                } catch (MqttException e) {
+                    Timber.e(e, getReason(e.getReasonCode()));
+                    if (mListener != null) {
+                        mListener.onError(e);
+                    }
+                } catch (Exception e) {
+                    Timber.e(e, e.getMessage());
+
+                    if (mListener != null) {
+                        mListener.onError(e);
+                    }
+                }
             }
-        } catch (MqttException e) {
-            Timber.e(e, getReason(e.getReasonCode()));
-            if (mListener != null) {
-                mListener.onError(e);
-            }
-        }
+        });
+
     }
 
     @Override
@@ -87,15 +103,16 @@ public class MQTTConnection extends Connection implements MqttCallback {
 
     @Override
     public void sendMessage(final Message message) {
-        final Map<String, Object> wrapper = new HashMap<>();
-        wrapper.put("data", message.body);
-        wrapper.put("deviceId", mClient.getClientId());
-
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    final String topic = String.format("samantha.vertx/%s/%s", mClient.getClientId(), message.address);
+
+                    final Map<String, Object> wrapper = new HashMap<>();
+                    wrapper.put("data", message.body);
+                    wrapper.put("deviceId", mClient.getClientId());
+
+                    final String topic = createTopic(message.address);
                     final byte[] payload = JsonFormatter.toByteArray(wrapper);
                     mClient.publish(topic, payload, QOS_DELIVERY_ONLY_ONCE_WITH_CONFIRMATION, false);
 
@@ -113,9 +130,8 @@ public class MQTTConnection extends Connection implements MqttCallback {
                 }
             }
         });
-
-
     }
+
 
     @Override
     public boolean isOpen() {
@@ -143,9 +159,16 @@ public class MQTTConnection extends Connection implements MqttCallback {
         }
     }
 
+
     @Override
     public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
     }
+
+
+    private String createTopic(String address) {
+        return String.format("%s/%s/%s", TOPIC_PREFIX, mDevice.id, address);
+    }
+
 
     private String getReason(int reasonCode) {
         switch (reasonCode) {

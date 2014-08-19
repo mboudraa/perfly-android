@@ -14,7 +14,6 @@ import com.samantha.app.activity.MonitoringActivity;
 import com.samantha.app.core.net.Connection;
 import com.samantha.app.core.net.MQTTConnection;
 import com.samantha.app.core.net.Message;
-import com.samantha.app.core.net.ServerConnection;
 import com.samantha.app.core.sys.Device;
 import com.samantha.app.event.OnConnectionEvent;
 import com.samantha.app.event.SendMessageEvent;
@@ -44,7 +43,7 @@ public class MonitoringService extends Service implements Connection.Listener {
     private ScheduledFuture mSocketScheduledFuture;
     private NotificationManager mNotificationManager;
     private NotificationCompat.Builder mNotificationBuilder;
-    private Connection mConnection;
+    private MQTTConnection mConnection;
     private Monitoring mMonitoring;
     private Binder mBinder = new Binder();
     private MessageHandler mMessageHandler;
@@ -71,7 +70,7 @@ public class MonitoringService extends Service implements Connection.Listener {
         mNotificationBuilder = new NotificationCompat.Builder(this);
         mMonitoring = new Monitoring(this);
         mMessageHandler = new MessageHandler(this);
-        mConnection = new MQTTConnection(this);
+        mConnection = new MQTTConnection(Device.getInformations(this), this);
         mDevice = Device.getInformations(this);
         EventBus.getDefault().register(this);
         EventBus.getDefault().register(mMessageHandler);
@@ -109,7 +108,7 @@ public class MonitoringService extends Service implements Connection.Listener {
     @DebugLog
     public void startMonitoring(String packageName) {
 
-        if(isMonitoring()){
+        if (isMonitoring()) {
             stopMonitoring();
         }
 
@@ -200,7 +199,6 @@ public class MonitoringService extends Service implements Connection.Listener {
         if (mSocketScheduledFuture != null) {
             mSocketScheduledFuture.cancel(true);
         }
-        sendMessage(new Message(mDevice, "device.connect"));
         EventBus.getDefault().post(new OnConnectionEvent(true));
     }
 
@@ -222,4 +220,6 @@ public class MonitoringService extends Service implements Connection.Listener {
     public void onError(Exception error) {
         Timber.w(error, "Socket error");
     }
+
+
 }
