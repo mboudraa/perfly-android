@@ -4,11 +4,8 @@ import com.google.gson.annotations.Expose;
 
 public class CpuInfo {
 
-    @Expose
     public final int cpuTotal;
-    @Expose
     public final int cpuUser;
-    @Expose
     public final int cpuKernel;
 
     public CpuInfo(int cpuTotal, int cpuUser, int cpuKernel) {

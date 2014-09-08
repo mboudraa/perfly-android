@@ -1,23 +1,25 @@
 package com.samantha.app.core.sys;
 
-import com.google.gson.annotations.Expose;
-
 public class MemoryInfo {
 
-    @Expose
     public final int dalvikLimit;
-    @Expose
     public final int appTotal;
-    @Expose
     public final int appDalvik;
-    @Expose
     public final int appNative;
 
-    public MemoryInfo(int dalvikLimit, int appTotal, int appDalvik) {
+    public final long allocatedHeapSize;
+    public final long heapSize;
+    public final long heapFreeSize;
+
+    public MemoryInfo(int dalvikLimit, int appTotal, int appDalvik, long allocatedHeapSize, long heapFreeSize) {
         this.dalvikLimit = dalvikLimit;
         this.appTotal = appTotal;
         this.appDalvik = appDalvik;
         this.appNative = appTotal - appDalvik;
+        this.heapFreeSize = heapFreeSize;
+        this.allocatedHeapSize = allocatedHeapSize;
+        this.heapSize = heapFreeSize + allocatedHeapSize;
+
     }
 
 

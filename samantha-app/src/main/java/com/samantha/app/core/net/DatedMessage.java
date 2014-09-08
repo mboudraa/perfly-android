@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DatedMessage<T> extends Message<T> {
 
-
     public final long time;
 
     @JsonCreator

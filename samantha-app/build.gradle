@@ -57,14 +57,15 @@ repositories {
 
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(dir: 'libs', include: ['*.jar'], exclude: ['*javadoc.jar'])
     compile 'com.android.support:appcompat-v7:19.1.0'
     compile 'com.android.support:support-v4:19.1.0'
+
     compile 'de.greenrobot:eventbus:2.2.1'
     compile 'com.path:android-priority-jobqueue:1.1.2'
     compile 'com.jayway.awaitility:awaitility:1.6.0'
 
-    compile files('libs/org.eclipse.paho.client.mqttv3-1.0.0.jar')
+
 
     compile('com.squareup.retrofit:retrofit:1.6.0') {
         exclude group: 'com.google.code.gson'

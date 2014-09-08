@@ -6,11 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
-public final class JsonFormatter {
+public final class Json {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private JsonFormatter() {
+    private Json() {
     }
 
     public static byte[] toByteArray(Object o) throws JsonProcessingException {

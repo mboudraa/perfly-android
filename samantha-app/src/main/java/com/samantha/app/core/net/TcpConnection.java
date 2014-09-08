@@ -2,7 +2,7 @@ package com.samantha.app.core.net;
 
 import android.os.Handler;
 import android.os.Looper;
-import com.samantha.app.core.json.JsonFormatter;
+import com.samantha.app.core.json.Json;
 import timber.log.Timber;
 
 import java.io.IOException;
@@ -64,7 +64,7 @@ public class TcpConnection extends Connection {
                     while ((readBytes = inputStream.read(buffer, 0, 1024)) >= 0) {
                         if (readBytes > 0) {
                             String messageString = new String(buffer, 0, readBytes, "UTF-8");
-                            notifyMessage(JsonFormatter.fromJson(messageString, Message.class));
+                            notifyMessage(Json.fromJson(messageString, Message.class));
                         } else {
                             break;
                         }

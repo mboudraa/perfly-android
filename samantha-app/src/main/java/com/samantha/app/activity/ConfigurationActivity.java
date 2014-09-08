@@ -1,5 +1,6 @@
 package com.samantha.app.activity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
@@ -44,10 +45,14 @@ public class ConfigurationActivity extends BaseActivity {
     @Icicle
     boolean mConnected;
 
+    @Icicle
+    boolean mConnectingDialogOpen;
+
     JobManager mJobManager = SamApplication.getInstance().getJobManager();
 
 
     private MonitoringService mMonitoringService;
+    private ProgressDialog mConnectingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +67,6 @@ public class ConfigurationActivity extends BaseActivity {
         mEditText.setText(mConfigurationServer);
         updateStatusTextView(mConnected);
     }
-
 
     @Override
     protected void onServiceConnected(MonitoringService monitoringService) {
@@ -84,27 +88,35 @@ public class ConfigurationActivity extends BaseActivity {
     @OnClick(R.id.conf_connect_button)
     public void onConnectClicked() {
 
+        if (mConnectingDialog != null) {
+            mConnectingDialog.dismiss();
+        }
+        mConnectingDialog = showConnectingDialog();
+
         final String newConfServer = mEditText.getText().toString();
         if (mConfigurationServer == null || !mConfigurationServer.equals(newConfServer)) {
             saveToPreferences(newConfServer);
         }
 
-        if (!mMonitoringService.isConnectionOpen()) {
-            mMonitoringService.openConnection();
-        }
-
+        mMonitoringService.openConnection(newConfServer);
 
     }
 
     public void onEventMainThread(OnConnectionEvent event) {
         mConnected = event.connected;
         updateStatusTextView(mConnected);
+
+        if (mConnectingDialog != null) {
+            mConnectingDialog.dismiss();
+            mConnectingDialog = null;
+        }
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
         if (scanResult != null) {
             mEditText.setText(scanResult.getContents());
+            onConnectClicked();
         }
     }
 
@@ -120,6 +132,21 @@ public class ConfigurationActivity extends BaseActivity {
         } else {
             editor.commit();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mConnectingDialogOpen) {
+            mConnectingDialog = showConnectingDialog();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        mConnectingDialogOpen = mConnectingDialog != null && mConnectingDialog.isShowing();
+        dismissConnectingDialog();
+        super.onPause();
     }
 
     public void onValidateSelected() {
@@ -174,6 +201,19 @@ public class ConfigurationActivity extends BaseActivity {
         } else {
             mStatusTextView.setText(R.string.not_connected);
             mStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+        }
+    }
+
+
+    private ProgressDialog showConnectingDialog() {
+        dismissConnectingDialog();
+        return ProgressDialog.show(this, null, "Connecting", true, false);
+    }
+
+    private void dismissConnectingDialog() {
+        if (mConnectingDialog != null) {
+            mConnectingDialog.dismiss();
+            mConnectingDialog = null;
         }
     }
 

@@ -7,9 +7,10 @@ import com.samantha.app.core.sys.Application;
 import com.samantha.app.event.*;
 import com.samantha.app.job.ListInstalledApplicationsJob;
 import de.greenrobot.event.EventBus;
-import timber.log.Timber;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 
 public class MessageHandler {
@@ -42,18 +43,60 @@ public class MessageHandler {
         }
     }
 
-    public void onEvent(ApplicationsInstalledEvent event) {
+
+    public void onEventBackgroundThread(MemoryInfoEvent event) {
+        Message message = new Message(event, "android.monitoring.progress/monitoring");
+        mEventBus.post(new SendMessageEvent(message));
+    }
+
+    public void onEventBackgroundThread(CpuInfoEvent event) {
+        Message message = new Message(event, "android.monitoring.progress/monitoring");
+        mEventBus.post(new SendMessageEvent(message));
+    }
+
+    public void onEventBackgroundThread(ApplicationStatusChangedEvent event) {
+        Message message = new Message(event, "android.monitoring.progress/status");
+        mEventBus.post(new SendMessageEvent(message));
+    }
+
+    public void onEventBackgroundThread(OrientationChangedEvent event) {
+        Message message = new Message(event, "android.monitoring.progress/orientation");
+        mEventBus.post(new SendMessageEvent(message));
+    }
+
+    public void onEventBackgroundThread(DalvikEvent event) {
+        Message message = new Message(event, "android.monitoring.progress/dalvik");
+        mEventBus.post(new SendMessageEvent(message));
+    }
+
+    public void onEventBackgroundThread(ApplicationsInstalledEvent event) {
         sendApplications(event.applications);
     }
 
+
     private void sendApplications(ArrayList<Application> applications) {
-        mEventBus.post(new OnStartSendingApplicationsEvent(applications.size()));
+        OnStartSendingApplicationsEvent onStartSendingApplicationsEvent = new OnStartSendingApplicationsEvent(
+                applications.size());
+        mEventBus.post(new SendMessageEvent(new Message(onStartSendingApplicationsEvent, "android.apps.start")));
+        mEventBus.post(onStartSendingApplicationsEvent);
+
+        Collections.sort(applications, new Comparator<Application>() {
+            @Override
+            public int compare(Application lhs, Application rhs) {
+                return lhs.label.compareTo(rhs.label);
+            }
+        });
 
         for (int i = 0; i < applications.size(); i++) {
+
+            OnProgressSendingApplicationsEvent onProgressSendingApplicationsEvent =
+                    new OnProgressSendingApplicationsEvent(applications.get(i), (i + 1));
             mEventBus.post(
-                    new SendMessageEvent(new Message<Application>(applications.get(i), "vertx.app.post")));
-            mEventBus.post(new OnProgressSendingApplicationsEvent(applications.get(i), (i + 1)));
+                    new SendMessageEvent(new Message(onProgressSendingApplicationsEvent, "android.apps.progress")));
+            mEventBus.post(onProgressSendingApplicationsEvent);
         }
+
+        mEventBus.post(new SendMessageEvent(new Message(null, "android.apps.finish")));
         mEventBus.post(new OnFinishSendingApplicationsEvent());
 
     }

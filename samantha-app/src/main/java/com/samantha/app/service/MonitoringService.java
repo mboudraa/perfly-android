@@ -15,12 +15,9 @@ import com.samantha.app.core.net.Connection;
 import com.samantha.app.core.net.MQTTConnection;
 import com.samantha.app.core.net.Message;
 import com.samantha.app.core.sys.Device;
-import com.samantha.app.event.OnConnectionEvent;
-import com.samantha.app.event.SendMessageEvent;
-import com.samantha.app.event.StartMonitoringEvent;
-import com.samantha.app.event.StopMonitoringEvent;
+import com.samantha.app.event.*;
 import com.samantha.app.exception.MonitoringException;
-import com.samantha.app.service.sys.Monitoring;
+import com.samantha.app.service.sys.MonitoringManager;
 import de.greenrobot.event.EventBus;
 import hugo.weaving.DebugLog;
 import timber.log.Timber;
@@ -44,10 +41,9 @@ public class MonitoringService extends Service implements Connection.Listener {
     private NotificationManager mNotificationManager;
     private NotificationCompat.Builder mNotificationBuilder;
     private MQTTConnection mConnection;
-    private Monitoring mMonitoring;
+    private MonitoringManager mMonitoring;
     private Binder mBinder = new Binder();
     private MessageHandler mMessageHandler;
-    private Device mDevice;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -66,12 +62,10 @@ public class MonitoringService extends Service implements Connection.Listener {
     public void onCreate() {
 
         super.onCreate();
+        mMessageHandler = new MessageHandler(this);
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mNotificationBuilder = new NotificationCompat.Builder(this);
-        mMonitoring = new Monitoring(this);
-        mMessageHandler = new MessageHandler(this);
-        mConnection = new MQTTConnection(Device.getInformations(this), this);
-        mDevice = Device.getInformations(this);
+        mConnection = new MQTTConnection(Device.getInformations(this)).setListener(this);
         EventBus.getDefault().register(this);
         EventBus.getDefault().register(mMessageHandler);
 
@@ -82,14 +76,12 @@ public class MonitoringService extends Service implements Connection.Listener {
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
 
-        final ApplicationInfo appInfo = intent.getParcelableExtra(EXTRA_APPLICATION_INFO);
         final int port = intent.getIntExtra(EXTRA_PORT, DEFAULT_PORT);
         final String hostname = intent.getStringExtra(EXTRA_HOSTNAME);
 
 
         if (!isConnectionOpen()) {
             mConnection.setHostname(hostname);
-//            mConnection.setPort(port);
             openConnection();
         }
 
@@ -117,8 +109,8 @@ public class MonitoringService extends Service implements Connection.Listener {
             ApplicationInfo appInfo = getPackageManager().getApplicationInfo(packageName, 0);
 
             startForeground(NOTIFICATION_ID, buildNotification(appInfo));
-            mMonitoring.start(appInfo);
-
+            mMonitoring = new MonitoringManager(this, appInfo);
+            mMonitoring.start();
             startActivity(appToMonitor);
 
         } catch (IllegalStateException | NullPointerException | PackageManager.NameNotFoundException e) {
@@ -137,12 +129,19 @@ public class MonitoringService extends Service implements Connection.Listener {
 
 
     public boolean isMonitoring() {
-        return mMonitoring.isMonitoring();
+        return mMonitoring != null && mMonitoring.isMonitoring();
     }
 
     @DebugLog
     public void openConnection() {
         mConnection.open();
+    }
+
+
+    @DebugLog
+    public void openConnection(String hostname) {
+        mConnection.setHostname(hostname);
+        openConnection();
     }
 
 
@@ -163,11 +162,12 @@ public class MonitoringService extends Service implements Connection.Listener {
         stopMonitoring();
     }
 
+
     @DebugLog
     public void sendMessage(Message message) {
-        if (isConnectionOpen()) {
-            mConnection.sendMessage(message);
-        }
+//        if (isConnectionOpen()) {
+        mConnection.sendMessage(message);
+//        }
     }
 
     private Notification buildNotification(ApplicationInfo appInfo) {
@@ -219,6 +219,8 @@ public class MonitoringService extends Service implements Connection.Listener {
     @Override
     public void onError(Exception error) {
         Timber.w(error, "Socket error");
+        EventBus.getDefault().post(new OnConnectionEvent(false));
+
     }
 
 

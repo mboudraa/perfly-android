@@ -1,8 +1,9 @@
 package com.samantha.app.core.net;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.samantha.app.core.json.JsonFormatter;
+import com.samantha.app.core.json.Json;
 import com.samantha.app.core.sys.Device;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -10,6 +11,7 @@ import timber.log.Timber;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,25 +23,44 @@ public class MQTTConnection extends Connection implements MqttCallback {
 
     private static final int PORT_DEFAULT = 1883;
     private static final int KEEP_ALIVE_INTERVAL = 5;
+    private static final int TIMEOUT = MqttConnectOptions.CONNECTION_TIMEOUT_DEFAULT * 2;
     private static final String TOPIC_PREFIX = "samantha.vertx";
 
     private final Device mDevice;
+    private final ConcurrentLinkedQueue<Message> mMessageCache = new ConcurrentLinkedQueue<>();
+    private final ExecutorService mExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final MqttConnectOptions mMqttConnectOptions;
 
-    ExecutorService mExecutor = Executors.newSingleThreadScheduledExecutor();
+    private MqttClient mClient;
 
-    MqttClient mClient;
-
-    public MQTTConnection(Device device, Listener listener) {
+    public MQTTConnection(Device device) {
         mDevice = device;
-        mListener = listener;
+        mMqttConnectOptions = new MqttConnectOptions();
+        mMqttConnectOptions.setKeepAliveInterval(KEEP_ALIVE_INTERVAL);
+        mMqttConnectOptions.setConnectionTimeout(TIMEOUT);
+
+        try {
+            mMqttConnectOptions.setWill(createTopic("device.disconnect"), Json.toByteArray(mDevice),
+                                        QOS_DELIVERY_ONCE_NO_CONFIRMATION, true);
+        } catch (JsonProcessingException e) {
+            //Should not Happen
+            throw new RuntimeException(e);
+        }
     }
 
+    @Override
+    public MQTTConnection setListener(Listener listener) {
+        mListener = listener;
+        return this;
+    }
 
-    public MQTTConnection setHostName(String hostname) {
+    @Override
+    public MQTTConnection setHostname(String hostname) {
         mHostname = hostname;
         return this;
     }
 
+    @Override
     public MQTTConnection setPort(int port) {
         if (port <= 0) {
             throw new IllegalArgumentException("port should be strictly positive");
@@ -50,21 +71,21 @@ public class MQTTConnection extends Connection implements MqttCallback {
 
     @Override
     public void open() {
+        if (isOpen()) {
+            return;
+        }
+
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
+
                 try {
                     final String uri = String.format("tcp://%s:%d", mHostname, mPort == 0 ? PORT_DEFAULT : mPort);
                     mClient = new MqttClient(uri, mDevice.id, new MemoryPersistence());
-                    MqttConnectOptions options = new MqttConnectOptions();
-                    options.setKeepAliveInterval(KEEP_ALIVE_INTERVAL);
-                    options.setWill(createTopic("device.disconnect"), JsonFormatter.toByteArray(mDevice),
-                                    QOS_DELIVERY_ONCE_NO_CONFIRMATION, true);
                     mClient.setCallback(MQTTConnection.this);
-
-                    mClient.connect(options);
+                    mClient.connect(mMqttConnectOptions);
                     mClient.subscribe(mDevice.id + "/#");
-                    mClient.publish(createTopic("device.connect"), JsonFormatter.toByteArray(mDevice),
+                    mClient.publish(createTopic("device.connect"), Json.toByteArray(mDevice),
                                     QOS_DELIVERY_ONCE_NO_CONFIRMATION, true);
 
                     if (mListener != null) {
@@ -103,27 +124,31 @@ public class MQTTConnection extends Connection implements MqttCallback {
 
     @Override
     public void sendMessage(final Message message) {
+//        mMessageCache.add(message);
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 try {
-
+//                    while (!mMessageCache.isEmpty()) {
+                    Message cachedMessage = message;
                     final Map<String, Object> wrapper = new HashMap<>();
-                    wrapper.put("data", message.body);
+                    wrapper.put("data", cachedMessage.body);
                     wrapper.put("deviceId", mClient.getClientId());
 
-                    final String topic = createTopic(message.address);
-                    final byte[] payload = JsonFormatter.toByteArray(wrapper);
+                    final String topic = createTopic(cachedMessage.address);
+                    final byte[] payload = Json.toByteArray(wrapper);
                     mClient.publish(topic, payload, QOS_DELIVERY_ONLY_ONCE_WITH_CONFIRMATION, false);
+//                        mMessageCache.poll();
+//                    }
 
-                } catch (MqttException e) {
-                    Timber.e(e, getReason(e.getReasonCode()));
-                    if (mListener != null) {
-                        mListener.onError(e);
-                    }
                 } catch (Exception e) {
-                    Timber.e(e, e.getMessage());
 
+                    String reason = e.getMessage();
+                    if (e instanceof MqttException) {
+                        reason = getReason(((MqttException) e).getReasonCode());
+                    }
+
+                    Timber.e(e, "Failed to send message cause : %s", reason);
                     if (mListener != null) {
                         mListener.onError(e);
                     }
@@ -132,6 +157,10 @@ public class MQTTConnection extends Connection implements MqttCallback {
         });
     }
 
+
+    public void clearCache() {
+        mMessageCache.clear();
+    }
 
     @Override
     public boolean isOpen() {
@@ -149,9 +178,9 @@ public class MQTTConnection extends Connection implements MqttCallback {
     @Override
     public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
         if (mListener != null) {
-            Map<String, Object> body = JsonFormatter.fromByteArray(mqttMessage.getPayload(),
-                                                                   new TypeReference<Map<String, Object>>() {
-                                                                   });
+            Map<String, Object> body = Json.fromByteArray(mqttMessage.getPayload(),
+                                                          new TypeReference<Map<String, Object>>() {
+                                                          });
             String address = topic.substring(mClient.getClientId().length() + 1);
 
             Timber.d("message arrive on address %1$s with payload %2$s", address, body);

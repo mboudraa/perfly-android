@@ -93,15 +93,17 @@ public abstract class BaseActivity extends ActionBarActivity {
         super.onStop();
     }
 
-    public void onEventMainThread(OnStartSendingApplicationsEvent e) {
-        mProgressDialog.setMax(e.total);
-        mProgressDialog.setMessage("Synchronizing Applications");
-        mProgressDialog.show();
-    }
+
 
     public void onEventMainThread(OnConnectionEvent e) {
         mProgressDialog.dismiss();
         Toast.makeText(this, "Connection with server is lost", Toast.LENGTH_LONG).show();
+    }
+
+    public void onEventMainThread(OnStartSendingApplicationsEvent e) {
+        mProgressDialog.setMax(e.total);
+        mProgressDialog.setMessage("Synchronizing Applications");
+        mProgressDialog.show();
     }
 
     public void onEventMainThread(OnProgressSendingApplicationsEvent e) {
