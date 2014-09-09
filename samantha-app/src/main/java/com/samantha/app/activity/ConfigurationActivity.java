@@ -21,6 +21,7 @@ import com.samantha.app.R;
 import com.samantha.app.SamApplication;
 import com.samantha.app.event.OnConnectionEvent;
 import com.samantha.app.service.MonitoringService;
+import de.greenrobot.event.EventBus;
 import icepick.Icicle;
 
 
@@ -49,7 +50,7 @@ public class ConfigurationActivity extends BaseActivity {
     boolean mConnectingDialogOpen;
 
     JobManager mJobManager = SamApplication.getInstance().getJobManager();
-
+    EventBus mEventBus = EventBus.getDefault();
 
     private MonitoringService mMonitoringService;
     private ProgressDialog mConnectingDialog;
@@ -72,6 +73,8 @@ public class ConfigurationActivity extends BaseActivity {
     protected void onServiceConnected(MonitoringService monitoringService) {
         mMonitoringService = monitoringService;
         mConnectButton.setEnabled(true);
+        updateStatusTextView(mMonitoringService.isConnectionOpen());
+
     }
 
     @Override
@@ -135,6 +138,20 @@ public class ConfigurationActivity extends BaseActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        mEventBus.register(this);
+    }
+
+
+    @Override
+    protected void onStop() {
+        mEventBus.unregister(this);
+        super.onStop();
+
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         if (mConnectingDialogOpen) {
@@ -154,7 +171,7 @@ public class ConfigurationActivity extends BaseActivity {
         final String newServerUrl = mEditText.getText().toString();
 
         if (TextUtils.isEmpty(newServerUrl)) {
-            mEditText.setError("invalide");
+            mEditText.setError("invalid");
         } else {
             saveToPreferences(newServerUrl);
             finish();

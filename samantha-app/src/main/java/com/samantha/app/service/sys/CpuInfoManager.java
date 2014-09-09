@@ -6,7 +6,6 @@ import android.text.TextUtils;
 import com.samantha.app.core.sys.ApplicationStatus;
 import com.samantha.app.core.sys.CpuInfo;
 import com.samantha.app.event.ApplicationPidChangedEvent;
-import com.samantha.app.event.ApplicationStateChangedEvent;
 import com.samantha.app.event.CpuInfoEvent;
 import de.greenrobot.event.EventBus;
 import timber.log.Timber;
@@ -37,17 +36,15 @@ public class CpuInfoManager extends AbstractManager {
         mScheduledFuture = mScheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                if (mPid != ApplicationStatus.PID_NONE) {
-                    try {
-                        long time = new Date().getTime();
-                        CpuInfo cpuInfo = dump();
-                        mEventBus.post(new CpuInfoEvent(cpuInfo, time));
-                    } catch (Exception e) {
-                        Timber.e(e, "Dump CPU Info failed");
-                    }
+                try {
+                    long time = new Date().getTime();
+                    CpuInfo cpuInfo = dump();
+                    mEventBus.post(new CpuInfoEvent(cpuInfo, time));
+                } catch (Exception e) {
+                    Timber.e(e, "Dump CPU Info failed");
                 }
             }
-        }, 0, 1, TimeUnit.SECONDS);
+        }, 0, 500, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -66,20 +63,22 @@ public class CpuInfoManager extends AbstractManager {
         int kernelUsage = 0;
         int total = 0;
 
-        long totalCpuUsageBefore = getTotalCpuUsage();
-        long utimeBefore = getCpuUsageByPid(mPid)[0];
-        long stimeBefore = getCpuUsageByPid(mPid)[1];
+        if (mPid != ApplicationStatus.PID_NONE) {
+            long totalCpuUsageBefore = getTotalCpuUsage();
+            long utimeBefore = getCpuUsageByPid(mPid)[0];
+            long stimeBefore = getCpuUsageByPid(mPid)[1];
 
-        Thread.sleep(500);
+            Thread.sleep(200);
 
-        long totalCpuUsageAfter = getTotalCpuUsage();
-        long utimeAfter = getCpuUsageByPid(mPid)[0];
-        long stimeAfter = getCpuUsageByPid(mPid)[1];
+            long totalCpuUsageAfter = getTotalCpuUsage();
+            long utimeAfter = getCpuUsageByPid(mPid)[0];
+            long stimeAfter = getCpuUsageByPid(mPid)[1];
 
 
-        userUsage = (int) (100 * (utimeAfter - utimeBefore) / (totalCpuUsageAfter - totalCpuUsageBefore));
-        kernelUsage = (int) (100 * (stimeAfter - stimeBefore) / (totalCpuUsageAfter - totalCpuUsageBefore));
-        total = userUsage + kernelUsage;
+            userUsage = (int) (100 * (utimeAfter - utimeBefore) / (totalCpuUsageAfter - totalCpuUsageBefore));
+            kernelUsage = (int) (100 * (stimeAfter - stimeBefore) / (totalCpuUsageAfter - totalCpuUsageBefore));
+            total = userUsage + kernelUsage;
+        }
 
         return new CpuInfo(total, userUsage, kernelUsage);
     }

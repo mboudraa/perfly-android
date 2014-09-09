@@ -46,8 +46,8 @@ public class DalvikEventManager extends AbstractManager {
                                     Matcher matcher = pattern.matcher(line);
 
 
-                                    if (matcher.matches() && matcher.groupCount() >= 2 && matcher.group(2)
-                                                                                                 .startsWith("GC_")) {
+                                    if (matcher.matches() && matcher.groupCount() >= 2
+                                            && matcher.group(2).startsWith("GC_")) {
                                         String type = matcher.group(2);
                                         String value = matcher.group(3);
                                         mEventBus.post(new DalvikEvent(type, value, new Date().getTime()));

@@ -39,19 +39,17 @@ public class MemoryInfoManager extends AbstractManager {
         mScheduledFuture = mScheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                if (mPid != ApplicationStatus.PID_NONE) {
-                    try {
-                        long time = new Date().getTime();
-                        MemoryInfo memoryInfo = dump();
-                        if (memoryInfo != null) {
-                            mEventBus.post(new MemoryInfoEvent(memoryInfo, time));
-                        }
-                    } catch (Exception e) {
-                        Timber.e(e, "Dump Memory Info failed");
+                try {
+                    long time = new Date().getTime();
+                    MemoryInfo memoryInfo = dump();
+                    if (memoryInfo != null) {
+                        mEventBus.post(new MemoryInfoEvent(memoryInfo, time));
                     }
+                } catch (Exception e) {
+                    Timber.e(e, "Dump Memory Info failed");
                 }
             }
-        }, 0, 1, TimeUnit.SECONDS);
+        }, 0, 500, TimeUnit.MILLISECONDS);
 
     }
 
@@ -67,23 +65,23 @@ public class MemoryInfoManager extends AbstractManager {
     }
 
     public MemoryInfo dump() {
+
+        int appTotal = 0;
+        int appDalvik = 0;
+        long allocatedHeapSize = Debug.getNativeHeapAllocatedSize() / 1024;
+        long heapSize = Debug.getNativeHeapSize() / 1024;
+
         Debug.MemoryInfo[] infos = mActivityManager.getProcessMemoryInfo(new int[]{mPid});
 
         if (infos != null && infos.length > 0) {
             Debug.MemoryInfo info = infos[0];
 
-            int appTotal = info.getTotalPrivateDirty() + info.getTotalSharedDirty();
-            int appDalvik = info.dalvikPrivateDirty + info.dalvikSharedDirty;
-            long allocatedHeapSize = Debug.getNativeHeapAllocatedSize() / 1024;
-            long heapSize = Debug.getNativeHeapSize() / 1024;
-
-            Debug.startAllocCounting();
-
-            return new MemoryInfo(mDalvikLimit, appTotal, appDalvik, allocatedHeapSize, heapSize);
+            appTotal = info.getTotalPrivateDirty() + info.getTotalSharedDirty();
+            appDalvik = info.dalvikPrivateDirty + info.dalvikSharedDirty;
 
         }
 
-        return null;
+        return new MemoryInfo(mDalvikLimit, appTotal, appDalvik, allocatedHeapSize, heapSize);
     }
 
 

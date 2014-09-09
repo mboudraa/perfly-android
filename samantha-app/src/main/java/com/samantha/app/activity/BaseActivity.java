@@ -37,9 +37,6 @@ public abstract class BaseActivity extends ActionBarActivity {
     };
 
 
-    private ProgressDialog mProgressDialog;
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,14 +55,6 @@ public abstract class BaseActivity extends ActionBarActivity {
     protected void onStart() {
         super.onStart();
 
-        mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        mProgressDialog.setIndeterminate(false);
-
-
-        EventBus.getDefault().register(this);
-
         SharedPreferences prefs = getSharedPreferences(ConfigurationActivity.PREF_NAME, MODE_PRIVATE);
         String hostname = prefs.getString(ConfigurationActivity.PREF_SERVER_KEY, "");
 
@@ -80,7 +69,6 @@ public abstract class BaseActivity extends ActionBarActivity {
 
     @Override
     protected void onPause() {
-        mProgressDialog.dismiss();
         super.onPause();
     }
 
@@ -89,31 +77,9 @@ public abstract class BaseActivity extends ActionBarActivity {
         if (mMonitoringService != null) {
             unbindService(mConnection);
         }
-        EventBus.getDefault().unregister(this);
         super.onStop();
     }
 
-
-
-    public void onEventMainThread(OnConnectionEvent e) {
-        mProgressDialog.dismiss();
-        Toast.makeText(this, "Connection with server is lost", Toast.LENGTH_LONG).show();
-    }
-
-    public void onEventMainThread(OnStartSendingApplicationsEvent e) {
-        mProgressDialog.setMax(e.total);
-        mProgressDialog.setMessage("Synchronizing Applications");
-        mProgressDialog.show();
-    }
-
-    public void onEventMainThread(OnProgressSendingApplicationsEvent e) {
-        mProgressDialog.setMessage(String.format("Synchronizing %s", e.application.label));
-        mProgressDialog.setProgress(e.progress);
-    }
-
-    public void onEventMainThread(OnFinishSendingApplicationsEvent e) {
-        mProgressDialog.dismiss();
-    }
 
     protected void onServiceConnected(MonitoringService monitoringService) {
     }

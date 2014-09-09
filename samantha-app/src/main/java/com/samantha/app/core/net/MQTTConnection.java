@@ -71,15 +71,18 @@ public class MQTTConnection extends Connection implements MqttCallback {
 
     @Override
     public void open() {
-        if (isOpen()) {
-            return;
-        }
+
 
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
 
                 try {
+
+                    if (isOpen()) {
+                        close();
+                    }
+
                     final String uri = String.format("tcp://%s:%d", mHostname, mPort == 0 ? PORT_DEFAULT : mPort);
                     mClient = new MqttClient(uri, mDevice.id, new MemoryPersistence());
                     mClient.setCallback(MQTTConnection.this);
