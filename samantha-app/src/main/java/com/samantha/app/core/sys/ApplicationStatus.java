@@ -1,6 +1,6 @@
 package com.samantha.app.core.sys;
 
-import android.app.ActivityManager;
+import static android.app.ActivityManager.RunningAppProcessInfo.*;
 
 public class ApplicationStatus {
 
@@ -28,19 +28,26 @@ public class ApplicationStatus {
     }
 
     public enum State {
-        FOREGROUND(ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND), BACKGROUND(
-                ActivityManager.RunningAppProcessInfo.IMPORTANCE_BACKGROUND), NOT_RUNNING(-1);
+        FOREGROUND(new int[]{IMPORTANCE_FOREGROUND, IMPORTANCE_VISIBLE}),
+        BACKGROUND(new int[]{IMPORTANCE_BACKGROUND, IMPORTANCE_PERCEPTIBLE, IMPORTANCE_SERVICE}),
+        NOT_RUNNING;
 
-        private final int mState;
+        private final int[] mState;
 
-        private State(int state) {
+        private State() {
+            this(null);
+        }
+
+        private State(int[] state) {
             mState = state;
         }
 
         public static State get(int stateInt) {
             for (State state : State.values()) {
-                if (state.mState == stateInt) {
-                    return state;
+                for (int importance : state.mState) {
+                    if (importance == stateInt) {
+                        return state;
+                    }
                 }
             }
 
