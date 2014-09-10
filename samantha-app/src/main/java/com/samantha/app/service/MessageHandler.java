@@ -75,8 +75,9 @@ public class MessageHandler {
 
 
     private void sendApplications(ArrayList<Application> applications) {
+        final int total = applications.size();
         OnStartSendingApplicationsEvent onStartSendingApplicationsEvent = new OnStartSendingApplicationsEvent(
-                applications.size());
+                total);
         mEventBus.post(new SendMessageEvent(new Message(onStartSendingApplicationsEvent, "android.apps.start")));
         mEventBus.post(onStartSendingApplicationsEvent);
 
@@ -87,10 +88,10 @@ public class MessageHandler {
             }
         });
 
-        for (int i = 0; i < applications.size(); i++) {
+        for (int i = 0; i < total; i++) {
 
             OnProgressSendingApplicationsEvent onProgressSendingApplicationsEvent =
-                    new OnProgressSendingApplicationsEvent(applications.get(i), (i + 1));
+                    new OnProgressSendingApplicationsEvent(applications.get(i), (i + 1), total);
             mEventBus.post(
                     new SendMessageEvent(new Message(onProgressSendingApplicationsEvent, "android.apps.progress")));
             mEventBus.post(onProgressSendingApplicationsEvent);

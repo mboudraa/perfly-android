@@ -213,13 +213,13 @@ public class MonitoringService extends Service implements Connection.Listener {
     @Override
     public void onClose() {
         Timber.i("Socket disconnected");
-        EventBus.getDefault().post(new OnConnectionEvent(false));
+        EventBus.getDefault().post(new OnConnectionEvent(isConnectionOpen()));
     }
 
     @Override
     public void onError(Exception error) {
         Timber.w(error, "Socket error");
-        EventBus.getDefault().post(new OnConnectionEvent(false));
+        EventBus.getDefault().post(new OnConnectionEvent(isConnectionOpen()));
 
     }
 
