@@ -1,4 +1,4 @@
-# Samantha client application
+# Perfly client application
 
 ## Getting started
 ### Requirements
