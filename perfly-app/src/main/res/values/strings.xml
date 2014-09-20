@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Perf.ly</string>
+    <string name="stop_monitoring">STOP MONITORING</string>
+    <string name="server_url">Server url</string>
+    <string name="scan_qr_code">Scan QR CODE</string>
+    <string name="connect_to_server">Connect</string>
+    <string name="not_connected">NOT CONNECTED</string>
+    <string name="connected">CONNECTED</string>
+</resources>

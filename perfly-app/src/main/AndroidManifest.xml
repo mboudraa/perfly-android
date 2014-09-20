@@ -1,0 +1,51 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.perfly.android">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.GET_TASKS"/>
+    <uses-permission android:name="android.permission.ACCESS_SUPERUSER"/>
+
+    <application
+        android:name=".PerflyApplication"
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:icon="@drawable/perfly"
+        android:theme="@style/AppTheme">
+
+
+        <activity
+            android:name=".activity.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity android:name=".activity.MonitoringActivity"/>
+        <activity android:name=".activity.ConfigurationActivity"/>
+
+        <service android:name=".service.MonitoringService"/>
+
+        <receiver android:name=".event.SystemEventListener">
+            <intent-filter>
+                <action android:name="android.intent.action.SCREEN_ON"/>
+                <action android:name="android.intent.action.SCREEN_OFF"/>
+                <action android:name="android.intent.action.BATTERY_CHANGED"/>
+                <action android:name="android.intent.action.LOCALE_CHANGED"/>
+                <action android:name="android.intent.action.AIRPLANE_MODE"/>
+                <action android:name="android.intent.action.CAMERA_BUTTON"/>
+                <action android:name="android.intent.action.DREAMING_STARTED"/>
+                <action android:name="android.intent.action.DREAMING_STOPPED"/>
+                <action android:name="android.intent.action.HEADSET_PLUG"/>
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED"/>
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED"/>
+            </intent-filter>
+        </receiver>
+
+        <meta-data android:name="com.crashlytics.ApiKey" android:value="ab1d0cd7635c227b9a3fd1ef7e87ee2bdc9a4084"/>
+
+    </application>
+
+
+</manifest>

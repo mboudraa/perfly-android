@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="green_perfly">#adcc3d</color>
+    <color name="connected">@color/green_perfly</color>
+    <color name="not_connected">#ffcc0000</color>
+</resources>

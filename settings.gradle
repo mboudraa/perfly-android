@@ -1,1 +1,1 @@
-include 'samantha-app'
+include ':perfly-app'

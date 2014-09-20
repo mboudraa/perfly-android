@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    >
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+
+        <com.perfly.android.ui.FloatLabelLayout
+            android:id="@+id/conf_server_layout"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            app:floatLabelTextAppearance="@style/TextAppearance.FloatLabel"
+            >
+
+            <EditText
+                android:id="@+id/conf_server_edittext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textUri"
+                android:singleLine="true"
+                android:hint="@string/server_url"
+                />
+
+        </com.perfly.android.ui.FloatLabelLayout>
+
+
+        <ImageView
+            android:id="@+id/conf_scan_imageview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ic_action_camera"
+            android:layout_gravity="center_vertical"
+            android:contentDescription="@string/scan_qr_code"
+            />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/conf_connect_button"
+        android:layout_width="180dp"
+        android:layout_height="wrap_content"
+        android:drawableRight="@drawable/ic_action_send_now"
+        android:layout_marginTop="15dp"
+        android:paddingLeft="10dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:textSize="20sp"
+        android:gravity="center_vertical"
+        android:text="@string/connect_to_server"
+        android:layout_gravity="center"
+        />
+
+
+    <TextView
+        android:id="@+id/conf_status_textview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:textSize="25sp"
+        />
+
+
+</LinearLayout>
+
+
