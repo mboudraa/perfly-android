@@ -62,11 +62,25 @@ android {
     }
 
     buildTypes {
+
+        debug {
+            debuggable true
+            versionNameSuffix versionNameDev()
+        }
+
         release {
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+}
+
+def versionNameDev(){
+    "-${today()}"
+}
+
+def today(){
+    new Date().format("yyyyMMdd.HHmm")
 }
 
 repositories {
